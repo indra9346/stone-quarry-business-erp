@@ -567,5 +567,59 @@ await asUser(central, null, 'anon')
 await fails(central, 'anon cannot read central_businesses', `select * from central_businesses`, /permission denied/)
 
 // ---------------------------------------------------------------------------
+console.log('\n== Hosted-run SQL scripts (supabase/tests/manual) are valid and give the documented results ==')
+const manualDir = join(root, '..', 'tests', 'manual')
+const manual = (f) => readFileSync(join(manualDir, f), 'utf8')
+const runBlock = async (file, subs) => {
+  await asOwner(db)
+  let sql = manual(file)
+  for (const [k, v] of Object.entries(subs)) sql = sql.replaceAll(k, v)
+  try {
+    await db.exec(sql)
+    return 'NO ERROR (the block should end with an intentional error)'
+  } catch (e) {
+    await asOwner(db)
+    return e.message
+  }
+}
+{
+  const out03 = await runBlock('03_admin_flow.sql', { '<ADMIN_UUID>': ADMIN })
+  for (const needle of [
+    '1 totals      : subtotal=23400.00 cgst=585.00 sgst=585.00 igst=NULL grand=24570.00',
+    '2 NULL line   : all NULL = true',
+    '3 EV same no. : allowed',
+    '4 dup normal  : rejected',
+    '8 payment     :',
+    'same payment = true',
+    '10 bill       : paid, balance_due=0.00',
+    '12 cancelled  : cancelled, balance_due=0.00',
+    '14 ledger     : 4 rows, balance=0.00',
+  ]) check(`03_admin_flow.sql -> "${needle}"`, out03.includes(needle), out03)
+  check('03_admin_flow.sql -> no "(bad)" line', !out03.includes('(bad)'), out03)
+  const rolled = await one(db, `select count(*)::int c from customers where customer_name like 'ZZ TEST%'`)
+  eq('03_admin_flow.sql left nothing behind (rolled back)', rolled.c, 0)
+
+  const out04 = await runBlock('04_staff_checks.sql', { '<STAFF_UUID>': STAFF })
+  for (const needle of ['ledger rows visible  : 0', 'expense rows visible : 0', 'audit rows visible   : 0', 'insert expense      : rejected', 'ledger adjustment   : rejected', 'write bill total    : rejected'])
+    check(`04_staff_checks.sql -> "${needle}"`, out04.includes(needle), out04)
+  check('04_staff_checks.sql -> customers visible >= 1', /customers visible    : [1-9]/.test(out04), out04)
+  check('04_staff_checks.sql -> no "(bad)" line', !out04.includes('(bad)'), out04)
+
+  const out05 = await runBlock('05_anon_checks.sql', {})
+  check('05_anon_checks.sql -> all 7 tables say permission denied and none readable', (out05.match(/permission denied/g) ?? []).length === 7 && !out05.includes('BAD'), out05)
+
+  await asOwner(db)
+  const rows02 = await rows(db, manual('02_structure_checks.sql').replace(/--[^\n]*\n/g, ''))
+  const v = Object.fromEntries(rows02.map((r) => [r.check_name.split(' (')[0], r.value]))
+  eq('02_structure_checks.sql: tables', v['tables in public'], '21')
+  eq('02_structure_checks.sql: tables without RLS', v['tables WITHOUT row level security'], '0')
+  eq('02_structure_checks.sql: authenticated CREATE on public', v['authenticated can CREATE in schema public'], 'false')
+  eq('02_structure_checks.sql: functions anon can execute', v['functions anon can execute'], '0')
+  eq('02_structure_checks.sql: functions authenticated can execute', v['functions authenticated can execute'],
+    'apply_stock_movement, cancel_bill, current_role_is, is_active_staff, next_document_number, post_bill_to_ledger, record_ledger_adjustment, record_payment')
+  eq('02_structure_checks.sql: bills unique constraint', v['bills unique constraint'], 'UNIQUE (bill_type, bill_number)')
+}
+
+// ---------------------------------------------------------------------------
 console.log(`\n${passed} checks passed, ${failures.length} failed`)
 if (failures.length) { console.log('\nFAILURES:\n - ' + failures.join('\n - ')); process.exit(1) }
