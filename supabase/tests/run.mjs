@@ -127,6 +127,20 @@ eq('units table ships empty (no invented unit)', (await one(db, 'select count(*)
 const t0 = await one(db, `select value from settings where key='tax_defaults'`)
 check('tax_defaults percentages are NULL, not invented', t0.value.cgst_percent === null && t0.value.igst_percent === null, JSON.stringify(t0.value))
 
+// Static scan of everything that ships: SQL, seed and the TypeScript app.
+import { readdirSync as ls, statSync as st } from 'node:fs'
+const walk = (d, out = []) => { for (const f of ls(d)) { const p = join(d, f); st(p).isDirectory() ? (f !== 'node_modules' && walk(p, out)) : out.push(p) } return out }
+const repo = join(root, '..', '..')
+const shipped = [...walk(root), join(root, '..', 'seed.sql'), ...walk(join(repo, 'src'))]
+const banned = /preferred_payment|received_via|payment_identifier|payee|recipient|payout|beneficiar|Sowmya|Nagesh|KA-?13-?C|24570|234685|225025/i
+const noComments = (t) => t.split(String.fromCharCode(10)).filter((l) => !l.trim().startsWith('--')).join(String.fromCharCode(10))
+const hits = shipped.filter((f) => banned.test(noComments(readFileSync(f, 'utf8'))))
+eq('no shipped SQL/seed/TypeScript has payment-routing terms, unverified party/vehicle data, or hard-coded document totals', hits.map((h) => h.replace(repo, '')).join(', ') || 'none', 'none')
+const phoneRefs = await rows(db, `select p.proname from pg_proc p where pronamespace='public'::regnamespace and prosrc ~* '(phone|mobile)'`)
+eq('no function reads a phone/mobile column', phoneRefs.length, 0)
+const phoneCols = await rows(db, `select table_name||'.'||column_name c from information_schema.columns where table_schema='public' and column_name ~* '(phone|mobile)' order by 1`)
+eq('phone columns are contact info only (customers, drivers, staff_profiles)', phoneCols.map((r) => r.c).join(','), 'customers.alternate_phone,customers.phone,drivers.phone,staff_profiles.phone')
+
 // ---------------------------------------------------------------------------
 console.log('\n== Identity: KMG and Murudeshwara run the identical schema ==')
 const fingerprint = async (d) => (await rows(d, `
@@ -202,6 +216,15 @@ check('switching to IGST-only: CGST/SGST NULL, IGST = 1170, total unchanged 24,5
 await db.query(`update bills set cgst_percent = 2.5, sgst_percent = 2.5, igst_percent = null where id=$1`, [billId])
 eq('restored to CGST+SGST -> 24,570', (await one(db, 'select grand_total from bills where id=$1', [billId])).grand_total, '24570.00')
 
+// Corrections BEFORE posting must remain possible.
+const cb = (await one(db, `insert into bills (bill_type,bill_number,bill_number_source,customer_id,cgst_percent) values ('normal','C-WRONG','manual',$1,2.5) returning id`, [customerId])).id
+const ci = (await one(db, `insert into bill_items (bill_id, description, quantity, rate, amount) values ($1,'entered wrongly',10,10,100) returning id`, [cb])).id
+await db.query(`update bill_items set quantity=20, rate=10, amount=200 where id=$1`, [ci])
+await db.query(`update bills set bill_number='C-RIGHT' where id=$1`, [cb])
+eq('un-posted bill: a data-entry mistake (line, number) can be corrected and totals follow', JSON.stringify(await one(db, `select bill_number, subtotal, cgst_amount from bills where id=$1`, [cb])), JSON.stringify({ bill_number: 'C-RIGHT', subtotal: '200.00', cgst_amount: '5.00' }))
+await db.query(`delete from bill_items where id=$1`, [ci])
+eq('un-posted bill: removing the line brings the total back to a real 0', (await one(db, 'select grand_total from bills where id=$1', [cb])).grand_total, '0.00')
+
 // ---------------------------------------------------------------------------
 console.log('\n== Bill numbering ==')
 await db.query(`insert into bills (bill_type,bill_number,bill_number_source,customer_id) values ('ev','52','manual',$1)`, [customerId])
@@ -228,6 +251,8 @@ await fails(db, 'posted bill: cannot change customer', `update bills set custome
 await db.query(`update bills set notes = 'note edit is allowed' where id=$1`, [billId])
 ok('posted bill: non-financial edits still allowed')
 eq('staff sees no ledger rows (admin-only)', (await rows(db, 'select * from customer_ledger')).length, 0)
+const cut2 = await one(db, `select * from bill_items where bill_id=$1 and description='Temple cutting'`, [billId])
+check('after posting the bill, "Temple cutting" quantity/unit/rate/amount/hsn are still NULL', cut2.quantity === null && cut2.unit === null && cut2.rate === null && cut2.amount === null && cut2.hsn_code === null)
 await fails(db, 'staff cannot insert a ledger row directly', `insert into customer_ledger (customer_id,transaction_type,debit,running_balance) values ($1,'adjustment',5,5)`, /permission denied/, [customerId])
 await fails(db, 'staff cannot insert a payment directly', `insert into payments (payment_number,customer_id,amount,payment_mode) values ('P',$1,5,'cash')`, /permission denied/, [customerId])
 await fails(db, 'staff cannot call the internal ledger primitive', `select append_ledger_entry($1,'adjustment',null,null,'x',5,0)`, /permission denied/, [customerId])
@@ -254,6 +279,14 @@ await fails(db, 'no payment may exceed a settled bill', `select record_payment($
 await db.query(`select record_payment($1,null,500,'cash','on-account',null)`, [other])
 ok('on-account payment (no bill) recorded for a customer')
 
+await asUser(db, ADMIN)
+const cut3 = await one(db, `select * from bill_items where bill_id=$1 and description='Temple cutting'`, [billId])
+check('after payments too, "Temple cutting" is still NULL (never coerced to 0)', cut3.quantity === null && cut3.rate === null && cut3.amount === null)
+await fails(db, 'a posted payment cannot be deleted (admin)', `delete from payments`, /permission denied/)
+await fails(db, 'a posted payment cannot be edited (admin)', `update payments set amount = 1`, /permission denied/)
+await asOwner(db)
+await fails(db, 'the same payment cannot be posted to the ledger twice', `insert into customer_ledger (customer_id,transaction_type,reference_type,reference_id,credit,running_balance) select customer_id,'payment','payment',id,1,0 from payments limit 1`, /uq_ledger_reference/)
+await fails(db, 'the same bill cannot be debited to the ledger twice', `insert into customer_ledger (customer_id,transaction_type,reference_type,reference_id,debit,running_balance) values ('${customerId}','bill','bill','${billId}',1,0)`, /uq_ledger_reference/)
 await asUser(db, ADMIN)
 const led = await rows(db, `select * from customer_ledger where customer_id=$1 order by entry_seq`, [customerId])
 eq('customer A ledger: 1 bill debit + 2 payment credits', led.length, 3)
@@ -341,7 +374,7 @@ const sheetRows = [
   [1, '54 × 24 × 09', 'M', 108, 520, 56160], [2, '52 × 18 × 9.5"', 'M', 78, 520, 40560],
   [3, '52 × 18 × 9.5"', 'M', 78, 520, 40560], [4, '51 × 18 × 9.5"', 'M', 76.5, 520, 39780],
   [5, '45 × 18 × 12"', 'M', 67.5, 550, 37125], [6, '7 × 36 × 08', '①M', 21, 460, 9660],
-  [7, '7.5 × 12 × 7.25"', '3M', 22.5, 400, 9000], [8, `3.5' × 15 × 08"`, '1M', 4, 460, 1840],
+  [7, '7.5 × 12 × 7.25"', '3M', 22.5, 400, 9000], [8, '3.5 × 15 × 08"', '1M', 4, 460, 1840],
 ]
 for (const r of sheetRows) await db.query(`insert into measurement_sheet_rows (sheet_id,row_no,measurement_text,pcs_text,quantity,rate,amount,sort_order) values ($1,$2,$3,$4,$5,$6,$7,$2)`, [sheet, ...r])
 const ver = await one(db, 'select * from measurement_sheet_verification where sheet_id=$1', [sheet])
@@ -352,7 +385,16 @@ eq('stated total - row sum = 0', ver.difference, '0.00')
 eq('every row: amount = quantity x rate (verification only)', ver.rows_where_amount_differs_from_qty_x_rate, 0)
 const r6 = await one(db, `select * from measurement_sheet_rows where sheet_id=$1 and row_no=6`, [sheet])
 check('row 6: PCS text and ₹460 rate preserved exactly', r6.pcs_text === '①M' && r6.rate === '460.00' && r6.measurement_text === '7 × 36 × 08', JSON.stringify(r6))
-eq(`row 8: measurement text preserved verbatim`, (await one(db, `select measurement_text t from measurement_sheet_rows where sheet_id=$1 and row_no=8`, [sheet])).t, `3.5' × 15 × 08"`)
+const rowOf = async (n) => one(db, `select * from measurement_sheet_rows where sheet_id=$1 and row_no=$2`, [sheet, n])
+const r1 = await rowOf(1)
+eq('row 1 is present and NOT blank: 54 × 24 × 09 / M / 108 / 520 / 56,160', [r1.measurement_text, r1.pcs_text, r1.quantity, r1.rate, r1.amount].join(' | '), '54 × 24 × 09 | M | 108.000 | 520.00 | 56160.00')
+eq('row 6 amount = 9,660', (await rowOf(6)).amount, '9660.00')
+eq('row 8 amount = 1,840', (await rowOf(8)).amount, '1840.00')
+eq('row 6 rate = 460 (not 480)', (await rowOf(6)).rate, '460.00')
+eq('row 8 rate = 460 (not 480)', (await rowOf(8)).rate, '460.00')
+eq('row 8 PCS text 1M and measurement text verbatim', (await rowOf(8)).pcs_text + '|' + (await rowOf(8)).measurement_text, '1M|3.5 × 15 × 08"')
+eq('no row was shifted: row amounts in order', (await rows(db, `select amount from measurement_sheet_rows where sheet_id=$1 order by row_no`, [sheet])).map((r) => Number(r.amount)).join(','), '56160,40560,40560,39780,37125,9660,9000,1840')
+eq('no unexplained gap: stated total - row sum = 0 (the 9,660 belongs to row 6)', (await one(db, 'select stated_total - sum(amount) d from measurement_sheet_rows, measurement_sheets where measurement_sheets.id=$1 and sheet_id=$1 group by stated_total', [sheet])).d, '0.00')
 await db.query(`insert into measurement_sheet_rows (sheet_id,row_no,measurement_text) values ($1,9,'blank cells row')`, [sheet])
 const blank = await one(db, `select * from measurement_sheet_rows where sheet_id=$1 and row_no=9`, [sheet])
 check('blank cells on a row stay NULL, never 0', blank.pcs_text === null && blank.quantity === null && blank.rate === null && blank.amount === null)

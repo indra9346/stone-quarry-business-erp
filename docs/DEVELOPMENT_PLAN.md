@@ -9,7 +9,7 @@ Status reflects what is **actually implemented and verified**, not intent.
 - [x] **Phase 3 — Database.** Central registry + business-template
       migrations (`001`–`012`), corrected against the real source documents
       (`docs/RECEIPT_AND_DOCUMENT_ANALYSIS.md`) and verified on real
-      PostgreSQL with `npm run test:db` (243 checks: schema, arithmetic,
+      PostgreSQL with `npm run test:db` (261 checks: schema, arithmetic,
       NULL semantics, ledger, stock, RLS, grants, audit, KMG/Murudeshwara
       identity).
 - [x] **Phase 3.5 — Verification and correction pass.** Bill arithmetic

@@ -45,16 +45,23 @@ credentials. Run it after any migration change.
 
 ## Applying migrations
 
-Using the Supabase CLI, from the project root, pointed at the target
-project (central or a specific business):
+The two migration sets live in sub-folders, so the CLI's flat
+`supabase db push` (which reads `supabase/migrations/*.sql` directly) will
+**not** pick them up as-is. Apply each set to its own project, in filename
+order, using either:
 
-```bash
-supabase link --project-ref <project-ref>
-supabase db push
-```
+- the target project's SQL editor (paste each file in order), or
+- `psql "<that project's connection string>" -v ON_ERROR_STOP=1 -f <file>`
+  for each file in order (the connection string is a secret — keep it out of
+  the repo and the shell history).
 
-Or paste each file's contents into the target project's SQL editor in order,
-by filename.
+The files are ordered by dependency: e.g. `005` adds a foreign key to
+`quotations` (`004`), `007` adds foreign keys to `bills` (`005`), `010`
+revokes and re-grants privileges on every table created before it, and `011`
+grants its own tables. Function bodies that mention later tables (`006` reads
+`settings`) are resolved at call time, as on any Postgres. `npm run test:db`
+applies the files in exactly this order as a non-superuser owner, the way the
+hosted `postgres` role does.
 
 ## Why not one shared database with a `business_id` column?
 

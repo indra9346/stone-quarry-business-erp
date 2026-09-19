@@ -24,7 +24,7 @@ assumption is made — never bury an assumption silently inside code
   description ("Temple cutting"). A blank IGST stays `NULL`.
 - **Bill arithmetic is derived by the database**, not trusted from the client
   (see below).
-- A **measurement sheet** is an independent document, stored verbatim.
+- A **measurement sheet** is an independent document, stored verbatim. The source records dimensions and a Qty, but the business formula connecting them is **not confirmed** and is not implemented.
 - Payments are **customer payments received**, expenses are **business
   spending**, and the ledger is the running account of bills and payments.
   These stay separate concepts (see "Withdrawn idea" below).
@@ -53,7 +53,9 @@ Full read-out with confidence markers:
 [`RECEIPT_AND_DOCUMENT_ANALYSIS.md`](./RECEIPT_AND_DOCUMENT_ANALYSIS.md).
 
 - **Tax Invoice No. 52** (25-01-2026): total ₹24,570.
-- **Measurement Sheet** (01-07-26): total ₹2,34,685.
+- **Measurement Sheet** (01-07-26): total ₹2,34,685; the eight row amounts sum to exactly ₹2,34,685 — no unexplained difference.
+- The invoice's printed label is **GTIN** (value `29HCBPP8901D1ZG`); it is stored in GSTIN-compatible fields pending confirmation.
+- Uncertain handwritten party text is not customer master data, and the two documents share no customer relationship.
 
 **These are different documents and are not assumed to be the same
 transaction.** No foreign key, trigger or function connects a measurement
@@ -73,7 +75,7 @@ Only genuinely undecided items.
 | 5 | Whether recording an existing paper bill should also post a ledger debit / affect stock. | Posting is an explicit call (`post_bill_to_ledger`), never automatic. Stock is never moved automatically. |
 | 6 | Tax rounding / round-off convention on printed invoices. | Round to the paisa; no round-off field. |
 | 7 | Whether a bill may exist without a customer master record (walk-in). | `bills.customer_id` is required (the ledger needs a customer). |
-| 8 | Whether a mistaken payment can be reversed, and how. | No reversal function; `cancel_bill()` refuses a bill that has payments. |
+| 8 | **Payment reversal** and **correcting a bill after it is posted**. Not defined by the business. | Before posting, a bill (customer, number, lines, tax) can be freely corrected. After posting it is frozen (customer, type, number, total). The only controlled path today is admin `cancel_bill()` (refuses a bill that has payments; reverses the ledger debit) or an admin ledger adjustment. Cancelling keeps the bill number reserved, so a corrected bill needs a new number. Payments cannot be edited or deleted by any client; a reversal function is a **pending requirement**, not invented. |
 | 9 | Units the business uses; low-stock thresholds; expense categories beyond the seeded list. | `units` ships empty; the rest is configurable. |
 | 10 | Whether Staff should keep full edit rights on customers, quotations, vehicles, drivers, trips and measurement sheets (they currently do). | Unchanged from the original design. |
 

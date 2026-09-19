@@ -9,12 +9,11 @@ not, and what is deliberately **not** concluded.
 - **Blank** — the cell is empty on the paper. A blank is stored as `NULL`,
   never as `0` (see `supabase/migrations/business-template/005_billing.sql`).
 
-> **Correction.** An earlier version of this file misaligned the measurement
-> sheet rows by one (it treated row 1 as blank and shifted every later row),
-> which produced a false "₹9,660 gap" between the row sum and the total, and
-> it stated dimension arithmetic as if a formula had been confirmed. Both
-> were wrong. The rows below are re-read against the image; the sheet's own
-> arithmetic is exact.
+> **Correction note.** An earlier transcription of the measurement sheet had
+> its rows misaligned. That error has been removed from the repository. Read
+> against the photograph, the sheet is internally consistent: every row's
+> amount equals quantity × rate, the eight amounts sum to the written total,
+> and **no unexplained difference remains**.
 
 ---
 
@@ -26,12 +25,12 @@ not, and what is deliberately **not** concluded.
 | Supplier | K M G ENTERPRISES — Stone Merchants & Building Material Suppliers | Confirmed |
 | Printed address | Sy. No. 25/4, 25/6, Chikkagollahalli Village, Kundana H0bali (printed spelling), Devanahalli Taluk – 562110, Bangalore Rural Dist. | Confirmed |
 | Printed phones | 9108318319, 9535988986 | Confirmed |
-| Printed "GTIN" | `29HCBPP8901D1ZG` (printed label is "GTIN"; the value has the shape of a GSTIN) | Confirmed as printed |
+| Printed identifier | Source-document label: **GTIN**. Value: `29HCBPP8901D1ZG`. The value has the shape of a GSTIN, and the database stores such values in GSTIN-compatible fields (`party_gstin`, `settings.business_profile.gstin`) — that interpretation is **pending confirmation**; the document itself says "GTIN". | Confirmed as printed; interpretation pending |
 | Invoice No. | 52 | Confirmed |
 | Date | 25-01-2026 | Confirmed |
-| Vehicle No. | Handwritten; reads approximately `KA-13-C-6489` | **Uncertain** — not treated as master data |
+| Vehicle No. | Handwritten registration number | **Uncertain** — not transcribed; not master data |
 | E-Way Bill No. | — | Blank |
-| Party name/address | Handwritten, partly legible ("… Anjaneya Swamy Temple … Mandya") | **Uncertain** — not transcribed as data |
+| Party name/address | Handwritten, only partly legible | **Uncertain** — not transcribed; not customer master data |
 | Party GSTIN | — | Blank |
 | Line 1 | "Temple stone" · HSN **6802** · Qty **390** · Rate **60** · Amount **23,400** | Confirmed (wording: see note) |
 | Line 2 | "Temple cutting" · HSN, Qty, Rate, Amount all blank | Confirmed text; all values Blank |
@@ -78,26 +77,29 @@ A different pre-printed form from the invoice (no GST fields).
 | 3 | 52 × 18 × 9.5" | M | 78 | 520 | 40,560 |
 | 4 | 51 × 18 × 9.5" | M | 76.5 | 520 | 39,780 |
 | 5 | 45 × 18 × 12" | M | 67.5 | 550 | 37,125 |
-| 6 | 7 × 36 × 08 | ①M (circled digit; hard to read) | 21 | 460 | 9,660 |
-| 7 | 7.5 × 12 × 7.25" | ③M | 22.5 | 400 | 9,000 |
-| 8 | 3.5' × 15 × 08" | ①M | 4 | 460 | 1,840 |
+| 6 | 7 × 36 × 08 | approximately ①M (circled digit; hard to read) | 21 | 460 | 9,660 |
+| 7 | 7.5 × 12 × 7.25" | 3M | 22.5 | 400 | 9,000 |
+| 8 | 3.5 × 15 × 08" | 1M | 4 | 460 | 1,840 |
 
+- The photograph appears to show a small foot mark after the 3.5 on row 8;
+  the authoritative dataset omits it, so `3.5 × 15 × 08"` is stored. Nothing
+  depends on it.
 - **Rates on rows 6 and 8 are overwritten** (a struck-out 480 with 460 written
   over it). 460 is the value now on the paper and the amounts agree with it
   (21 × 460 = 9,660; 4 × 460 = 1,840), so **460 is stored**. The original
   handwriting remains visually uncertain.
-- Row 6's PCS text looks like "①M" in the photograph; one transcription gave
-  plain "M". Stored verbatim as `①M`, flagged uncertain.
+- Row 6's PCS text appears to be "①M" in the photograph. It is preserved as
+  `①M` and never normalised to plain "M"; the reading is uncertain.
 - Every row's amount equals Qty × Rate exactly, and the eight amounts sum to
   **2,34,685**, equal to the written total:
   56,160 + 40,560 + 40,560 + 39,780 + 37,125 + 9,660 + 9,000 + 1,840 = 234,685.
 
-**What this does *not* establish (deliberately not modelled)**
-- The meaning of the "PCS" column values ("M", "3M", "①M") — unknown.
-- Any unit of measure — unknown.
-- How Qty is derived from the three dimensions — unknown. (For example row 1:
-  54 × 24 × 09 → 108 is not a single obvious product.) No formula exists in
-  the schema.
+**What is not confirmed (deliberately not modelled)**
+
+The source document records physical dimensions and a Qty value, but the
+business formula connecting dimensions to Qty has **not yet been confirmed**.
+Also unconfirmed: the meaning of `M`, `①M`, `3M` and `1M`, and the unit of
+measure. No formula, unit or PCS interpretation exists in the schema.
 
 ---
 

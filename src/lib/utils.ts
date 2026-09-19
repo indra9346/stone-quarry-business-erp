@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** Format a number as Indian Rupees, e.g. 24570 -> "₹24,570". Currency is
+/** Format a number as Indian Rupees, e.g. 12345 -> "₹12,345". Currency is
  * configurable per VITE_DEFAULT_CURRENCY; INR grouping is the initial default
  * per BUSINESS_RULES.md. */
 export function formatCurrency(amount: number, currency = 'INR') {

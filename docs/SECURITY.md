@@ -145,7 +145,7 @@ entered receives the amount" is deleted: no column, function, trigger or
 policy reads a phone/mobile number to route money. `npm run test:db`
 scans column names and function bodies to keep it that way.
 
-**Result.** 243 checks pass, including: staff blocked from ledger/expenses/
+**Result.** 261 checks pass, including: staff blocked from ledger/expenses/
 audit; anon blocked from every table and function; inactive and profile-less
 users blocked; direct writes to ledger, payments, stock quantity, bill
 totals and audit logs rejected for every client role; KMG and Murudeshwara

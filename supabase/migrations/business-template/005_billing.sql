@@ -43,7 +43,8 @@ create table if not exists bills (
   -- customer master must not rewrite an issued bill).
   party_name text,
   party_address text,
-  party_gstin text,
+  party_gstin text,                  -- source label on the photographed invoice is "GTIN"; stored as a
+                                     -- GSTIN-compatible value, interpretation pending confirmation
 
   eway_bill_number text,
   vehicle_number text,               -- as written on the document
