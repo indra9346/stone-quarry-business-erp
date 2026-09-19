@@ -13,20 +13,28 @@ KMG STONES   MURUDESHWARA STONES
 KMG DATABASE   MURUDESHWARA DATABASE   (separate Supabase projects)
 ```
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full design and
-[`BUSINESS_RULES.md`](./BUSINESS_RULES.md) for confirmed rules, defaults and
-open questions that need your (the business owner's) sign-off.
+Documentation:
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) (design) ·
+[`docs/DATABASE_ARCHITECTURE.md`](./docs/DATABASE_ARCHITECTURE.md) (schema/isolation detail) ·
+[`docs/BUSINESS_RULES.md`](./docs/BUSINESS_RULES.md) (confirmed rules + open questions) ·
+[`docs/RECEIPT_AND_DOCUMENT_ANALYSIS.md`](./docs/RECEIPT_AND_DOCUMENT_ANALYSIS.md) (source evidence) ·
+[`docs/SECURITY.md`](./docs/SECURITY.md) (review findings + fixes) ·
+[`docs/PERFORMANCE.md`](./docs/PERFORMANCE.md) ·
+[`docs/DEVELOPMENT_PLAN.md`](./docs/DEVELOPMENT_PLAN.md) (phased roadmap + real status).
 
 ## Status
 
-This is the **Phase 1–3 scaffold**: project structure, the Main Branch
-gateway UI, per-business auth/routing wiring, and complete database
-migrations for the central registry + business-template schema. Operational
-modules (bills, quotations, ledger, stock, vehicles, reports UI) are not
-built yet — see the roadmap in `BUSINESS_RULES.md`. Nothing here is
-connected to a live Supabase project yet; the app runs and shows the
-gateway, but each business portal will say "not configured" until you wire
-up real credentials (deliberately — see below).
+Phase 1–3 scaffold plus a verification/correction pass: project structure,
+the Main Branch gateway UI, per-business auth/routing wiring, and complete
+database migrations for the central registry + business-template schema —
+re-reviewed, with three real RLS/function bugs found and fixed (see
+`docs/SECURITY.md`). Operational modules (bills, quotations, ledger, stock,
+vehicles, reports UI) are not built yet — see `docs/DEVELOPMENT_PLAN.md`.
+Nothing here is connected to a live Supabase project yet; the app's code
+assumes the gateway will render and each business portal will say "not
+configured" until you wire up real credentials (deliberately — see below) —
+this has not been run/built in this environment (no `npm install` has
+succeeded here; see `docs/DEVELOPMENT_PLAN.md` for why).
 
 ## Getting started
 
@@ -71,4 +79,4 @@ supabase/
 ## Tech stack
 
 React + TypeScript + Vite + Tailwind + Supabase/PostgreSQL + TanStack Query
-+ React Router + Zod/React Hook Form. See `ARCHITECTURE.md` for rationale.
++ React Router + Zod/React Hook Form. See `docs/ARCHITECTURE.md` for rationale.

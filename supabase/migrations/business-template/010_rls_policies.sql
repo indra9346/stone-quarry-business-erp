@@ -71,14 +71,16 @@ create policy "staff full access vehicles" on vehicles for all
 create policy "staff full access trips" on trips for all
   to authenticated using (is_active_staff()) with check (is_active_staff());
 
--- Payments: Staff record payments as part of billing workflow (needed to
--- close a bill at the counter) but Ledger visibility (below) is Admin-only,
--- consistent with the spec ("Staff restrictions: Customer Ledger -> NO"
--- being about the ledger VIEW/report, not the raw ability to take payment
--- during a sale). Revisit in BUSINESS_RULES.md if the customer wants
--- payments restricted too.
-create policy "staff record payments" on payments for insert
-  to authenticated with check (is_active_staff());
+-- Payments: NO direct insert policy is granted here, on purpose (corrected
+-- during review — an earlier draft granted staff a direct INSERT policy on
+-- `payments`, which would have let application code create a payment row
+-- without going through record_payment(), silently skipping the matching
+-- bill.amount_received update and ledger entry). All payments MUST be
+-- created via the SECURITY DEFINER record_payment() function
+-- (006_payments_ledger.sql), which performs its own is_active_staff()
+-- check and keeps payment + bill + ledger atomic. Staff can still read
+-- payment history (needed to show "amount received" on a bill) — that is
+-- not the same as Customer Ledger visibility, which stays Admin-only below.
 create policy "staff read payments" on payments for select
   to authenticated using (is_active_staff());
 

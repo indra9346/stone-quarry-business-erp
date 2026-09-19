@@ -44,6 +44,12 @@ create index if not exists idx_stock_movements_reference on stock_movements (ref
 -- negative stock (unless explicitly permitted), updates quantity_on_hand,
 -- and writes the audit trail row. ALWAYS use this function to change stock
 -- — never update stock_items.quantity_on_hand directly (Rule #17/#43).
+-- Not SECURITY DEFINER: unlike the ledger/numbering functions, staff already
+-- hold direct RLS grants covering everything this function does (UPDATE on
+-- stock_items via "staff write stock", INSERT on stock_movements via
+-- "staff insert stock movements" in 010_rls_policies.sql), so running as
+-- the caller is sufficient. The explicit check below is defense-in-depth
+-- in case those policies are ever loosened without revisiting this function.
 create or replace function apply_stock_movement(
   p_stock_item_id uuid,
   p_movement_type text,
@@ -60,6 +66,10 @@ declare
   v_new numeric;
   v_row stock_movements;
 begin
+  if not is_active_staff() then
+    raise exception 'Not authorized to move stock';
+  end if;
+
   select quantity_on_hand into v_prev from stock_items where id = p_stock_item_id for update;
   if v_prev is null then
     raise exception 'Stock item % not found', p_stock_item_id;

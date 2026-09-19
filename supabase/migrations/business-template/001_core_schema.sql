@@ -37,9 +37,26 @@ create table if not exists staff_profiles (
 create trigger trg_staff_profiles_updated_at before update on staff_profiles
   for each row execute function set_updated_at();
 
+-- ---------------------------------------------------------------------------
 -- Convenience predicate functions used throughout RLS policies.
+--
+-- SECURITY DEFINER + fixed search_path is REQUIRED here, not optional.
+-- staff_profiles' own RLS policies (below) call these functions to decide
+-- who may read/write a row. If these functions were left as regular
+-- (SECURITY INVOKER) functions, evaluating them AS PART OF a staff_profiles
+-- policy would run their inner `select ... from staff_profiles` under that
+-- same policy again -> infinite recursion / "stack depth limit exceeded" on
+-- the very first login. Marking them SECURITY DEFINER makes the inner query
+-- run as the function owner (the migration role), which is exempt from RLS
+-- on tables it owns, breaking the loop. `search_path` is pinned so a
+-- SECURITY DEFINER function can't be tricked by a session-level search_path
+-- into resolving `staff_profiles` to an attacker-created object.
+-- ---------------------------------------------------------------------------
 create or replace function current_role_is(required text)
-returns boolean language sql stable as $$
+returns boolean
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
   select exists (
     select 1 from staff_profiles sp
     where sp.user_id = auth.uid() and sp.status = 'active'
@@ -48,11 +65,19 @@ returns boolean language sql stable as $$
 $$;
 
 create or replace function is_active_staff()
-returns boolean language sql stable as $$
+returns boolean
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
   select exists (
     select 1 from staff_profiles sp where sp.user_id = auth.uid() and sp.status = 'active'
   );
 $$;
+
+revoke execute on function current_role_is(text) from public;
+revoke execute on function is_active_staff() from public;
+grant execute on function current_role_is(text) to authenticated;
+grant execute on function is_active_staff() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- units — configurable measurement units (Rule #15). Do not hardcode a

@@ -45,7 +45,7 @@ by filename.
 ## Why not one shared database with a `business_id` column?
 
 The customer's requirement explicitly asks for genuine database isolation
-(see `ARCHITECTURE.md` #6-#10), not a shared table filtered by tenant ID. A
+(see `../docs/ARCHITECTURE.md` #6-#10), not a shared table filtered by tenant ID. A
 `business_id` column is one query away from an accidental cross-tenant leak;
 a separate project physically cannot return another business's rows, even
 if application code has a bug.
