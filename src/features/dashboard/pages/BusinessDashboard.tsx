@@ -1,4 +1,4 @@
-import { useBusinessContext } from '@/features/auth/BusinessContext'
+import { useBusinessContext } from '@/features/auth/businessContextValue'
 
 /**
  * Business Dashboard shell (spec section 19/24). Deliberately shows an

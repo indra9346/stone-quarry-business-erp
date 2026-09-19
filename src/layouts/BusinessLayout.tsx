@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { LogOut, ArrowLeftRight } from 'lucide-react'
-import { useBusinessContext } from '@/features/auth/BusinessContext'
+import { useBusinessContext } from '@/features/auth/businessContextValue'
 
 /**
  * Business identity must remain visible everywhere inside a business portal

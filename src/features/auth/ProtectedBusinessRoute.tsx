@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useBusinessContext } from './BusinessContext'
+import { useBusinessContext } from './businessContextValue'
 
 /**
  * Enforces Rule #26/#27: an unauthenticated or unauthorized user must never

@@ -77,8 +77,7 @@ of bug the Supabase-client isolation already solved at the network layer.
 ## What's not measurable yet
 
 Bundle size, actual route-transition speed, real query latency, and PDF
-generation performance cannot be measured — there is no `npm install`,
-build, or live database in this environment yet (see final report,
-"Build/typecheck/lint status"). This document records the *strategy*
+generation performance cannot be measured yet — the project installs, typechecks and builds, but
+there is no live database or real data volume yet. This document records the *strategy*
 verified in code; a real performance pass (Phase 9) requires the app
 actually running against real data volume.

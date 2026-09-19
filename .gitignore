@@ -41,6 +41,9 @@ yarn-error.log*
 # testing
 coverage/
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # misc
 *.local
 .eslintcache

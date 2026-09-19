@@ -50,7 +50,7 @@ coverage, absence of secrets, RLS/function logic (corrected), receipt
 analysis rigor.
 
 **Not done, despite files existing:** no code in this repo has ever been
-executed against a real database, a real `npm install`, or a real build —
-see `docs/SECURITY.md` "Testing performed" and the final report for exactly
+executed against a real database (`npm install`, typecheck and build do
+now succeed) — see `docs/SECURITY.md` "Testing performed" and the final report for exactly
 what could and couldn't be run in this environment. Do not read the
 presence of `.tsx`/`.sql` files as evidence the app works end-to-end yet.

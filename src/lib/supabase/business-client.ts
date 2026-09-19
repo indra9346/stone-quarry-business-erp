@@ -14,7 +14,7 @@ import { getBusinessSupabaseConfig } from './env'
  *    entirely different project's credentials, not a missed WHERE clause.
  *  - Only the anon key ever reaches the browser. RLS in each project's
  *    database is the real enforcement boundary — see
- *    supabase/migrations/business-template/002_rls_policies.sql.
+ *    supabase/migrations/business-template/010_rls_policies.sql.
  *  - Switching business does NOT reuse another business's cached client or
  *    session; the caller (BusinessAuthProvider) must sign out of the
  *    previous business's client before/when switching (Rule #14).

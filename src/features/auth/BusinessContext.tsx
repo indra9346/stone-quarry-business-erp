@@ -1,24 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { BusinessCode, UserRole } from '@/types/business'
 import { BUSINESS_REGISTRY } from '@/types/business'
 import { getBusinessClient, isBusinessConfigured } from '@/lib/supabase/business-client'
-
-interface BusinessSessionState {
-  code: BusinessCode
-  session: Session | null
-  role: UserRole | null
-  loading: boolean
-  configured: boolean
-}
-
-interface BusinessContextValue extends BusinessSessionState {
-  profile: (typeof BUSINESS_REGISTRY)[BusinessCode]
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signOut: () => Promise<void>
-}
-
-const BusinessContext = createContext<BusinessContextValue | null>(null)
+import {
+  BusinessContext,
+  type BusinessContextValue,
+  type BusinessSessionState,
+} from './businessContextValue'
 
 /**
  * Establishes the "explicit business context" required by
@@ -100,10 +89,4 @@ export function BusinessProvider({ code, children }: { code: BusinessCode; child
   )
 
   return <BusinessContext.Provider value={value}>{children}</BusinessContext.Provider>
-}
-
-export function useBusinessContext() {
-  const ctx = useContext(BusinessContext)
-  if (!ctx) throw new Error('useBusinessContext must be used within a BusinessProvider')
-  return ctx
 }

@@ -32,9 +32,19 @@ re-reviewed, with three real RLS/function bugs found and fixed (see
 vehicles, reports UI) are not built yet — see `docs/DEVELOPMENT_PLAN.md`.
 Nothing here is connected to a live Supabase project yet; the app's code
 assumes the gateway will render and each business portal will say "not
-configured" until you wire up real credentials (deliberately — see below) —
-this has not been run/built in this environment (no `npm install` has
-succeeded here; see `docs/DEVELOPMENT_PLAN.md` for why).
+configured" until you wire up real credentials (deliberately — see below).
+`npm install`, `npm run typecheck`, `npm run lint` and `npm run build` all
+succeed; the SQL migrations have still never been run against a live
+database.
+
+### Known `npm audit` findings
+
+`npm audit` reports vulnerabilities in `tar`, which is pulled in only by the
+`supabase` CLI devDependency (it pins `tar@7.4.3` exactly). This is
+development tooling only — it is not bundled into the browser app. The
+suggested fix (`npm audit fix --force`) is a breaking major upgrade of the
+CLI, so it is deliberately not applied; revisit when upgrading the Supabase
+CLI on purpose.
 
 ## Getting started
 

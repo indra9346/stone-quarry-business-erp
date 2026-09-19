@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { useBusinessContext } from './BusinessContext'
+import { useBusinessContext } from './businessContextValue'
 
 /** LEVEL 1 -> LEVEL 2 transition: Business Authentication (spec section 5). */
 export default function BusinessSignIn() {
