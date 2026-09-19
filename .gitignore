@@ -47,3 +47,6 @@ coverage/
 # misc
 *.local
 .eslintcache
+
+# generated hosted-deploy working dirs
+.deploy/

@@ -3,10 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    color-scheme: dark;
-  }
-
   html,
   body,
   #root {
@@ -14,12 +10,21 @@
   }
 
   body {
-    @apply bg-navy-950 text-slate-100 antialiased;
-    font-feature-settings: 'ss01' 1, 'cv01' 1;
+    @apply bg-slate-100 text-slate-900 antialiased;
+    font-feature-settings: 'cv11' 1, 'ss01' 1;
+  }
+
+  /* Numbers line up in tables and KPIs. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 
   ::selection {
-    @apply bg-amber-500/30 text-amber-100;
+    @apply bg-amber-500/30 text-slate-900;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-cyan-500 ring-offset-2 ring-offset-white;
   }
 }
 
@@ -29,5 +34,51 @@
       linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
       linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
     background-size: 40px 40px;
+  }
+  .scroll-thin {
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Printing: only `.print-area` is printed, on A4, without the app shell.
+   -------------------------------------------------------------------------- */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+  .no-print {
+    display: none !important;
   }
 }
