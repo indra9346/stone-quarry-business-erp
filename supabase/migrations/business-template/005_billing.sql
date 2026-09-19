@@ -31,13 +31,13 @@
 create table if not exists bills (
   id uuid primary key default gen_random_uuid(),
   bill_type text not null check (bill_type in ('normal', 'ev')),
-  bill_number text not null check (btrim(bill_number) <> ''),
+  bill_number text not null check (bill_number = btrim(bill_number) and bill_number <> ''),
   -- How the number was obtained: typed from an existing physical bill, or
   -- produced by next_document_number().
   bill_number_source text not null check (bill_number_source in ('manual', 'generated')),
   customer_id uuid not null references customers (id),
   quotation_id uuid references quotations (id),
-  bill_date date not null default current_date,
+  bill_date date not null default (now() at time zone 'Asia/Kolkata')::date,
 
   -- Party details AS WRITTEN on this document (snapshot; later edits to the
   -- customer master must not rewrite an issued bill).
@@ -67,15 +67,23 @@ create table if not exists bills (
 
   -- Maintained ONLY by record_payment() (no client privilege on it).
   amount_received numeric(14, 2) not null default 0 check (amount_received >= 0),
-  balance_due numeric(14, 2) generated always as (grand_total - amount_received) stored,
+  -- What is still owed. A cancelled bill owes nothing.
+  balance_due numeric(14, 2) generated always as (
+    case when status = 'active' then grand_total - amount_received else 0 end
+  ) stored,
   payment_status text not null default 'unpaid' check (
     payment_status in ('unpaid', 'partially_paid', 'paid', 'overpaid')
   ),
 
-  status text not null default 'active' check (status in ('active', 'cancelled', 'void')),
+  status text not null default 'active' check (status in ('active', 'cancelled')),
   -- Set by post_bill_to_ledger(); once set, the bill's amounts and identity
   -- are frozen (see bills_before_write).
   ledger_posted_at timestamptz,
+  -- Set only by cancel_bill(); a cancelled bill is kept (number, lines and
+  -- history intact) and becomes read-only.
+  cancelled_at timestamptz,
+  cancelled_by uuid,
+  cancellation_reason text,
 
   notes text,
   extra_fields jsonb not null default '{}'::jsonb,
@@ -92,7 +100,11 @@ create table if not exists bills (
   constraint bill_tax_total_consistent check (
     tax_amount = coalesce(cgst_amount, 0) + coalesce(sgst_amount, 0) + coalesce(igst_amount, 0)
   ),
-  constraint bill_discount_within_subtotal check (coalesce(discount_amount, 0) <= subtotal)
+  constraint bill_discount_within_subtotal check (coalesce(discount_amount, 0) <= subtotal),
+  constraint bill_cancellation_consistent check (
+    (status = 'active') = (cancelled_at is null)
+    and (cancelled_at is null or nullif(btrim(cancellation_reason), '') is not null)
+  )
 );
 create index if not exists idx_bills_customer on bills (customer_id);
 create index if not exists idx_bills_payment_status on bills (payment_status);
@@ -119,10 +131,19 @@ create table if not exists bill_items (
   unit text references units (code),
   rate numeric(14, 2) check (rate is null or rate >= 0),
   amount numeric(14, 2) check (amount is null or amount >= 0),
+  -- Informational link only. A bill does NOT move stock: stock changes only
+  -- through an explicit apply_stock_movement() call (nothing here, and no
+  -- trigger, deducts stock when a bill is created or posted).
   stock_item_id uuid references stock_items (id),
   sort_order int not null default 0,
+  -- A line is either descriptive (quantity, rate and amount ALL NULL) or
+  -- fully priced (all three present, amount = round(quantity x rate, 2)).
+  -- Half-filled financial lines are rejected. `unit` and `hsn_code` are
+  -- optional either way (invoice 52 shows a quantity with no unit).
+  constraint bill_item_financials_together
+    check ((quantity is null) = (rate is null) and (rate is null) = (amount is null)),
   constraint bill_item_amount_consistent
-    check (quantity is null or rate is null or amount is null or amount = round(quantity * rate, 2))
+    check (amount is null or amount = round(quantity * rate, 2))
 );
 create index if not exists idx_bill_items_bill on bill_items (bill_id);
 
@@ -133,20 +154,27 @@ create index if not exists idx_bill_items_bill on bill_items (bill_id);
 -- ---------------------------------------------------------------------------
 create or replace function bills_before_write()
 returns trigger language plpgsql
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_taxable numeric(14, 2);
 begin
-  if tg_op = 'UPDATE' and old.ledger_posted_at is not null then
-    -- A posted bill is what the ledger debited. Its identity and amount are
-    -- frozen; corrections go through cancel_bill() / a ledger adjustment.
-    if new.customer_id is distinct from old.customer_id
-       or new.bill_type is distinct from old.bill_type
-       or new.bill_number is distinct from old.bill_number then
-      raise exception 'Bill % is posted to the ledger; its customer, type and number cannot change', old.bill_number;
+  if tg_op = 'UPDATE' then
+    if old.status <> 'active' then
+      raise exception 'Bill % is % and is read-only', old.bill_number, old.status;
     end if;
-    new.ledger_posted_at := old.ledger_posted_at;
+    if old.ledger_posted_at is not null then
+      -- A posted bill is what the ledger debited. Its identity, date and
+      -- amount are frozen; corrections go through cancel_bill() or an admin
+      -- ledger adjustment.
+      if new.customer_id is distinct from old.customer_id
+         or new.bill_type is distinct from old.bill_type
+         or new.bill_number is distinct from old.bill_number
+         or new.bill_date is distinct from old.bill_date then
+        raise exception 'Bill % is posted to the ledger; its customer, type, number and date cannot change', old.bill_number;
+      end if;
+      new.ledger_posted_at := old.ledger_posted_at;
+    end if;
   end if;
 
   select coalesce(sum(amount), 0) into new.subtotal from bill_items where bill_id = new.id;
@@ -183,15 +211,26 @@ create trigger trg_bills_before_write before insert or update on bills
 -- clients hold no UPDATE privilege on the derived columns of `bills`.
 create or replace function bill_items_touch_bill()
 returns trigger language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
-  v_bill_id uuid := case when tg_op = 'DELETE' then old.bill_id else new.bill_id end;
+  v_ids uuid[] := array[case when tg_op = 'DELETE' then old.bill_id else new.bill_id end];
+  v_id uuid;
+  v_bill bills;
 begin
-  update bills set updated_at = now() where id = v_bill_id;
   if tg_op = 'UPDATE' and old.bill_id is distinct from new.bill_id then
-    update bills set updated_at = now() where id = old.bill_id;
+    v_ids := v_ids || old.bill_id;
   end if;
+  foreach v_id in array v_ids loop
+    select * into v_bill from bills where id = v_id;
+    if found then
+      -- Once a bill is posted (or cancelled) its lines are history.
+      if v_bill.ledger_posted_at is not null or v_bill.status <> 'active' then
+        raise exception 'Bill % is posted to the ledger or cancelled; its lines are read-only', v_bill.bill_number;
+      end if;
+      update bills set updated_at = now() where id = v_id;
+    end if;
+  end loop;
   return null;
 end;
 $$;

@@ -77,7 +77,7 @@ create or replace function apply_stock_movement(
   p_reason text default null
 ) returns stock_movements
 language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_prev numeric;

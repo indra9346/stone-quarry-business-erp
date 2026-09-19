@@ -50,6 +50,12 @@ Central project.
   must equal `round(quantity × rate, 2)` when all three are present;
   `grand_total` is also guarded by a CHECK so it cannot disagree with its
   parts even if the trigger were disabled.
+- **Lines**: quantity, rate and amount are all-NULL (descriptive) or all present
+  with `amount = round(quantity × rate, 2)`; unit/HSN optional.
+- **Lifecycle**: un-posted (editable) → posted (identity, date, lines and totals
+  frozen, one ledger debit) → cancelled (read-only, reason recorded, one reversing
+  credit, number kept). No payment reversal exists (pending business definition).
+- **Bills do not move stock**; `bill_items.stock_item_id` is informational.
 - **Bill identity**: `unique (bill_type, bill_number)`; `bill_number_source`
   records `manual` vs `generated`. `bills.vehicle_number` keeps the number as
   written; `vehicle_id`/`trip_id` are real FKs. Party name/address/GSTIN are

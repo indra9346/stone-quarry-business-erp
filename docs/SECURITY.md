@@ -140,12 +140,19 @@ with Supabase-equivalent default grants).
 | 12 | Medium | A posted bill's total/customer could be changed afterwards, silently desynchronising the ledger; staff could delete bills. | `bills_before_write()` freezes a posted bill's identity and total; delete is admin-only and only for an un-posted bill; `cancel_bill()` reverses the ledger debit. |
 | 13 | Low | `next_document_number()` used the server's year, not the business timezone, and accepted any document type. | `Asia/Kolkata` year; CHECK on document type. |
 
+| 14 | High | A cancelled bill stayed editable and its cancellation reason lived in a free-text `notes` field any staff member could overwrite; cancelled bills could be deleted (losing the number); a posted bill's lines could be added to/edited if the total did not change. | Cancelled and posted bills are read-only (header and lines); `cancelled_at/by/reason` are set only by `cancel_bill()` (no client privilege); only active, un-posted bills can be deleted; `balance_due` is 0 for a cancelled bill. |
+| 15 | Medium | Half-filled financial lines (quantity without rate, amount alone…) were accepted. | All-or-none CHECK on bill and quotation lines. |
+| 16 | Medium | Business dates used the database server's UTC date (wrong for Indian evening entries); bill posting dated the ledger with the posting day, not the bill date. | Defaults use `Asia/Kolkata`; ledger rows use the bill/payment date. |
+| 17 | Medium | A double-clicked/retried payment created two payments and two credits (nothing distinguished it from a genuine second payment). | Optional `idempotency_key` (unique); same key returns the original payment. |
+| 18 | Medium | `SECURITY DEFINER` functions used `search_path = public, pg_temp`; on Supabase `authenticated` can hold CREATE on `public`, so a planted function/operator could shadow a built-in. | `search_path = pg_catalog, public, pg_temp` everywhere, and `CREATE` on `public` is revoked from `public/anon/authenticated`. **Verify after deploying:** `select has_schema_privilege('authenticated','public','create');` must be `false`. |
+| 19 | Low | `record_payment` failed with a NULL date when the client passed an explicit NULL. | Defaults to the business date. |
+
 **Removed concept.** The earlier idea that "the person whose number is
 entered receives the amount" is deleted: no column, function, trigger or
 policy reads a phone/mobile number to route money. `npm run test:db`
 scans column names and function bodies to keep it that way.
 
-**Result.** 261 checks pass, including: staff blocked from ledger/expenses/
+**Result.** 291 checks pass, including: staff blocked from ledger/expenses/
 audit; anon blocked from every table and function; inactive and profile-less
 users blocked; direct writes to ledger, payments, stock quantity, bill
 totals and audit logs rejected for every client role; KMG and Murudeshwara
@@ -154,9 +161,11 @@ policies).
 
 ## Not yet applicable / not yet verified
 
-- **Live Supabase**: the migrations have been verified on real PostgreSQL
-  but **not yet applied to a hosted Supabase project** (none has been
-  created). Supabase-specific behaviour (real JWT claims, `auth.users`
+- **Live Supabase**: the migrations have been verified on the real PostgreSQL 18
+  engine (PGlite, compiled to WebAssembly) but **not on a native server or
+  the Supabase Postgres image, and not on a hosted project** (none has been
+  created). Repeat `npm run test:db`-equivalent checks against a scratch
+  hosted project first. Supabase-specific behaviour (real JWT claims, `auth.users`
   triggers, PostgREST) is emulated, not exercised.
 - **Payment-provider secrets, webhook, OAuth secrets**: none exist; no
   payment provider integration has been built or requested.

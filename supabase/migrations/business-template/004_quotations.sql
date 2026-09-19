@@ -14,9 +14,9 @@
 
 create table if not exists quotations (
   id uuid primary key default gen_random_uuid(),
-  quotation_number text not null unique check (btrim(quotation_number) <> ''),
+  quotation_number text not null unique check (quotation_number = btrim(quotation_number) and quotation_number <> ''),
   customer_id uuid not null references customers (id),
-  quotation_date date not null default current_date,
+  quotation_date date not null default (now() at time zone 'Asia/Kolkata')::date,
   valid_until date,                          -- provisional
   status text not null default 'draft' check (
     status in ('draft', 'sent', 'accepted', 'rejected', 'expired', 'converted')   -- provisional
@@ -57,10 +57,13 @@ create table if not exists quotation_items (
   rate numeric(14, 2) check (rate is null or rate >= 0),
   amount numeric(14, 2) check (amount is null or amount >= 0),
   sort_order int not null default 0,
-  -- When quantity and rate are both present and an amount is given, the
-  -- amount must be their product (to the paisa). A lump-sum line (amount
-  -- only) or a descriptive line (nothing) is also valid.
+  -- A line is either descriptive (quantity, rate and amount ALL NULL) or
+  -- fully priced (all three present, amount = round(quantity x rate, 2)).
+  -- Half-filled financial lines are rejected. `unit` and `hsn_code` are
+  -- optional either way.
+  constraint quotation_item_financials_together
+    check ((quantity is null) = (rate is null) and (rate is null) = (amount is null)),
   constraint quotation_item_amount_consistent
-    check (quantity is null or rate is null or amount is null or amount = round(quantity * rate, 2))
+    check (amount is null or amount = round(quantity * rate, 2))
 );
 create index if not exists idx_quotation_items_quotation on quotation_items (quotation_id);

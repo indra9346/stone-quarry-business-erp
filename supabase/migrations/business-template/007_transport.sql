@@ -44,7 +44,7 @@ create table if not exists trips (
   unit text references units (code),
   pickup_location text,
   destination text,
-  trip_date date not null default current_date,
+  trip_date date not null default (now() at time zone 'Asia/Kolkata')::date,
   departure_time timestamptz,
   expected_delivery timestamptz,
   delivery_time timestamptz,

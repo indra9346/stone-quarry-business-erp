@@ -54,7 +54,7 @@ create index if not exists idx_audit_logs_created on audit_logs (created_at);
 -- table data only — no credentials are stored anywhere in this schema.
 create or replace function audit_row_change()
 returns trigger language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_old jsonb := case when tg_op in ('UPDATE', 'DELETE') then to_jsonb(old) end;

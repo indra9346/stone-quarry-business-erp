@@ -19,6 +19,10 @@ assumption is made — never bury an assumption silently inside code
 - A **Normal Bill** may carry an **existing physical/manual bill number**
   typed in by the user; generation is never forced. Bill numbers are unique
   per `(bill_type, bill_number)`, so Normal 52 and EV 52 are separate.
+- **A bill line is either descriptive or fully priced.** Quantity, rate and
+  amount are all NULL (a descriptive line such as "Temple cutting") or all
+  present with `amount = round(quantity × rate, 2)`. Half-filled lines are
+  rejected. Unit and HSN are optional (invoice 52 shows a quantity with no unit).
 - **NULL is not zero.** A blank cell on a source document is stored as
   `NULL` (`0` means an explicit zero). A bill line may have only a
   description ("Temple cutting"). A blank IGST stays `NULL`.
@@ -40,12 +44,48 @@ grand total  = taxable + CGST + SGST + IGST + other charges
 ```
 
 Verified on invoice 52: 390 × 60 = 23,400; CGST 585; SGST 585; IGST NULL;
-grand total **24,570**. Nothing is hard-coded to that figure. Only "to the
-paisa" rounding is assumed; no round-off rule is invented.
+grand total **24,570**. Nothing is hard-coded to that figure.
 
-After a bill is posted to the ledger, its customer, type, number and total
-are frozen; corrections go through `cancel_bill()` or an admin ledger
-adjustment.
+**Rounding:** all arithmetic is exact `numeric`; tax and line amounts are
+rounded once, to 2 decimal places, half away from zero (23,401 × 2.5% =
+585.025 → 585.03). The business has not specified any other convention
+(whole-rupee round-off, per-line tax, etc.), so none is invented. Business
+dates default to `Asia/Kolkata`, not the server's UTC date.
+
+## Bill lifecycle
+
+1. **Draft / un-posted** — the bill (customer, number, date, lines, tax,
+   discount) can be freely corrected by Admin or Staff. An admin may delete
+   it.
+2. **Posted** (`post_bill_to_ledger`) — exactly one ledger debit, dated with
+   the bill date. Customer, type, number, date, lines and totals are then
+   frozen and the bill cannot be deleted. Descriptive/logistics fields
+   (E-Way Bill number, vehicle, notes, party text) may still be completed and
+   are audited.
+3. **Cancelled** (`cancel_bill`, admin, reason required, refused if payments
+   exist) — the bill and its number are kept and become read-only; who/when/
+   why is recorded; one reversing ledger credit is added; the bill owes
+   nothing. A cancelled bill cannot be deleted. Its number stays reserved, so
+   a corrected replacement needs a different number.
+
+**Not defined by the business (documented, not invented):** payment
+reversal; a correction path for a posted bill other than cancel-and-reissue.
+
+## Bills and stock are separate
+
+A bill is a financial/customer document. It does **not** move stock:
+`bill_items.stock_item_id` is an informational link, and no trigger or
+function deducts stock when a bill is created or posted. Stock changes only
+through an explicit `apply_stock_movement()`. Measurement sheets never touch
+stock either.
+
+## Duplicate protection
+
+- A bill can be debited once (`post_bill_to_ledger` refuses a second call and
+  a unique ledger index backs it up).
+- A payment is credited once (unique ledger index). A retried submission can
+  carry an `idempotency_key`; the same key returns the original payment
+  instead of creating a second one.
 
 ## Documents provided
 
@@ -68,14 +108,14 @@ Only genuinely undecided items.
 
 | # | Question | Current state (nothing invented) |
 |---|---|---|
-| 1 | **EV Bill**: what "EV" means, its format and fields, and whether its numbers are manual or generated. | `bill_type = 'ev'`; `bills.extra_fields` (jsonb) holds anything EV-specific once defined. Numbering is not assumed. |
+| 1 | **EV Bill** (pending business confirmation): what "EV" means, its format, fields, tax rules and whether its numbers are manual or generated. | `bill_type = 'ev'`; `bills.extra_fields` (jsonb) holds anything EV-specific once defined. Numbering is not assumed. |
 | 2 | **Measurement sheet**: meaning of the "PCS" column (`M`, `3M`, `①M`), the unit, and how Qty derives from the dimensions. | `pcs_text` and `measurement_text` stored verbatim; no unit column, no formula, `amount = quantity × rate` not enforced (a verification view reports mismatches). |
 | 3 | Whether a measurement sheet ever leads to a quotation or bill. | No link exists. |
-| 4 | **Quotation**: format, numbering, tax handling, expiry, statuses. No real quotation has been supplied. | Provisional scaffold (`valid_until`, status list, single `tax_amount`), marked provisional in `004_quotations.sql`. |
+| 4 | **Quotation**: number format, expiry, exact tax calculation, document layout, conversion workflow, statuses. No real quotation has been supplied. | Provisional scaffold (`valid_until`, status list, single `tax_amount`), marked provisional in `004_quotations.sql`. |
 | 5 | Whether recording an existing paper bill should also post a ledger debit / affect stock. | Posting is an explicit call (`post_bill_to_ledger`), never automatic. Stock is never moved automatically. |
 | 6 | Tax rounding / round-off convention on printed invoices. | Round to the paisa; no round-off field. |
 | 7 | Whether a bill may exist without a customer master record (walk-in). | `bills.customer_id` is required (the ledger needs a customer). |
-| 8 | **Payment reversal** and **correcting a bill after it is posted**. Not defined by the business. | Before posting, a bill (customer, number, lines, tax) can be freely corrected. After posting it is frozen (customer, type, number, total). The only controlled path today is admin `cancel_bill()` (refuses a bill that has payments; reverses the ledger debit) or an admin ledger adjustment. Cancelling keeps the bill number reserved, so a corrected bill needs a new number. Payments cannot be edited or deleted by any client; a reversal function is a **pending requirement**, not invented. |
+| 8 | **Payment reversal** and **correcting a bill after it is posted**. Not defined by the business. | Before posting, a bill (customer, number, lines, tax) can be freely corrected. After posting it is frozen (customer, type, number, total). The only controlled path today is admin `cancel_bill()` (refuses a bill that has payments; reverses the ledger debit) or an admin ledger adjustment. Cancelling keeps the bill number reserved, so a corrected bill needs a new number. Payments cannot be edited or deleted by any client. **Payment reversal workflow pending business definition** — nothing deletes financial history as a workaround. |
 | 9 | Units the business uses; low-stock thresholds; expense categories beyond the seeded list. | `units` ships empty; the rest is configurable. |
 | 10 | Whether Staff should keep full edit rights on customers, quotations, vehicles, drivers, trips and measurement sheets (they currently do). | Unchanged from the original design. |
 

@@ -55,7 +55,7 @@ create trigger trg_staff_profiles_updated_at before update on staff_profiles
 create or replace function current_role_is(required text)
 returns boolean
 language sql stable security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
   select exists (
     select 1 from staff_profiles sp
@@ -67,7 +67,7 @@ $$;
 create or replace function is_active_staff()
 returns boolean
 language sql stable security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
   select exists (
     select 1 from staff_profiles sp where sp.user_id = auth.uid() and sp.status = 'active'

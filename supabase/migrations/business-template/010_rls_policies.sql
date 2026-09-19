@@ -17,6 +17,13 @@
 -- --------------------------------------------------------------------------
 -- 1. Privileges: start from nothing.
 -- --------------------------------------------------------------------------
+-- Nobody but the migration owner may create objects in `public`: SECURITY
+-- DEFINER functions resolve names through search_path (pinned to
+-- pg_catalog, public, pg_temp), so an object planted in `public` by a
+-- signed-in user must be impossible. Verify after deployment:
+--   select has_schema_privilege('authenticated', 'public', 'create');  -- false
+revoke create on schema public from public, anon, authenticated;
+
 revoke all on all tables in schema public from anon, authenticated;
 revoke all on all sequences in schema public from anon, authenticated;
 alter default privileges in schema public revoke all on tables from anon, authenticated;
@@ -150,8 +157,8 @@ create policy "staff read bills" on bills for select to authenticated using (is_
 create policy "staff create bills" on bills for insert to authenticated with check (is_active_staff());
 create policy "staff edit bills" on bills for update
   to authenticated using (is_active_staff()) with check (is_active_staff());
-create policy "admin deletes unposted bills" on bills for delete
-  to authenticated using (current_role_is('admin') and ledger_posted_at is null);
+create policy "admin deletes unposted active bills" on bills for delete
+  to authenticated using (current_role_is('admin') and ledger_posted_at is null and status = 'active');
 create policy "staff full access bill items" on bill_items for all
   to authenticated using (is_active_staff()) with check (is_active_staff());
 

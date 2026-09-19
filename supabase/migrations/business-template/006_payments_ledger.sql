@@ -26,10 +26,12 @@ create table if not exists payments (
   payment_number text not null unique,
   customer_id uuid not null references customers (id),
   bill_id uuid,
-  payment_date date not null default current_date,
+  payment_date date not null default (now() at time zone 'Asia/Kolkata')::date,
   amount numeric(14, 2) not null check (amount > 0),
   payment_mode text not null check (payment_mode in ('cash', 'bank_transfer', 'upi', 'cheque', 'other')),
   reference_number text,
+  -- Optional client-supplied key making a retried submission idempotent.
+  idempotency_key text unique,
   notes text,
   recorded_by uuid references staff_profiles (user_id),
   created_at timestamptz not null default now(),
@@ -46,7 +48,7 @@ create table if not exists customer_ledger (
   -- trusted to follow lock order).
   entry_seq bigint generated always as identity,
   customer_id uuid not null references customers (id),
-  transaction_date date not null default current_date,
+  transaction_date date not null default (now() at time zone 'Asia/Kolkata')::date,
   transaction_type text not null check (transaction_type in ('bill', 'payment', 'adjustment', 'opening_balance')),
   reference_type text check (reference_type in ('bill', 'payment')),
   reference_id uuid,
@@ -74,10 +76,11 @@ create or replace function append_ledger_entry(
   p_reference_id uuid,
   p_description text,
   p_debit numeric,
-  p_credit numeric
+  p_credit numeric,
+  p_transaction_date date default null
 ) returns numeric
 language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_last_balance numeric;
@@ -94,10 +97,11 @@ begin
   v_new_balance := coalesce(v_last_balance, 0) + p_debit - p_credit;
 
   insert into customer_ledger (
-    customer_id, transaction_type, reference_type, reference_id,
+    customer_id, transaction_date, transaction_type, reference_type, reference_id,
     description, debit, credit, running_balance, created_by
   ) values (
-    p_customer_id, p_transaction_type, p_reference_type, p_reference_id,
+    p_customer_id, coalesce(p_transaction_date, (now() at time zone 'Asia/Kolkata')::date),
+    p_transaction_type, p_reference_type, p_reference_id,
     p_description, p_debit, p_credit, v_new_balance, auth.uid()
   );
 
@@ -111,7 +115,7 @@ $$;
 create or replace function post_bill_to_ledger(p_bill_id uuid)
 returns numeric
 language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_bill bills;
@@ -138,7 +142,7 @@ begin
   v_balance := append_ledger_entry(
     v_bill.customer_id, 'bill', 'bill', v_bill.id,
     'Bill ' || upper(v_bill.bill_type) || ' ' || v_bill.bill_number,
-    v_bill.grand_total, 0
+    v_bill.grand_total, 0, v_bill.bill_date
   );
   update bills set ledger_posted_at = now() where id = v_bill.id;
   return v_balance;
@@ -161,10 +165,11 @@ create or replace function record_payment(
   p_payment_mode text,
   p_reference_number text default null,
   p_notes text default null,
-  p_payment_date date default current_date
+  p_payment_date date default (now() at time zone 'Asia/Kolkata')::date,
+  p_idempotency_key text default null
 ) returns payments
 language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_bill bills;
@@ -177,6 +182,20 @@ begin
   end if;
   if p_amount is null or p_amount <= 0 then
     raise exception 'Payment amount must be greater than zero';
+  end if;
+  p_payment_date := coalesce(p_payment_date, (now() at time zone 'Asia/Kolkata')::date);
+
+  -- Retried submission: the same key returns the payment already recorded
+  -- (no second payment, no second ledger credit).
+  if p_idempotency_key is not null then
+    perform pg_advisory_xact_lock(hashtextextended(p_idempotency_key, 1));
+    select * into v_payment from payments where idempotency_key = p_idempotency_key;
+    if found then
+      if v_payment.amount <> p_amount or v_payment.bill_id is distinct from p_bill_id then
+        raise exception 'Idempotency key % was already used for a different payment', p_idempotency_key;
+      end if;
+      return v_payment;
+    end if;
   end if;
 
   if p_bill_id is not null then
@@ -206,10 +225,10 @@ begin
 
   insert into payments (
     payment_number, customer_id, bill_id, payment_date, amount,
-    payment_mode, reference_number, notes, recorded_by
+    payment_mode, reference_number, idempotency_key, notes, recorded_by
   ) values (
     next_document_number('payment', v_prefix), v_customer, p_bill_id, p_payment_date, p_amount,
-    p_payment_mode, p_reference_number, p_notes, auth.uid()
+    p_payment_mode, p_reference_number, p_idempotency_key, p_notes, auth.uid()
   ) returning * into v_payment;
 
   if p_bill_id is not null then
@@ -218,7 +237,7 @@ begin
 
   perform append_ledger_entry(
     v_customer, 'payment', 'payment', v_payment.id,
-    'Payment ' || v_payment.payment_number, 0, p_amount
+    'Payment ' || v_payment.payment_number, 0, p_amount, p_payment_date
   );
 
   return v_payment;
@@ -231,7 +250,7 @@ $$;
 create or replace function cancel_bill(p_bill_id uuid, p_reason text)
 returns void
 language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_bill bills;
@@ -254,8 +273,10 @@ begin
     raise exception 'Bill % has payments recorded against it and cannot be cancelled', v_bill.bill_number;
   end if;
 
-  update bills set status = 'cancelled', notes = coalesce(notes || E'\n', '') || 'Cancelled: ' || p_reason
-  where id = v_bill.id;
+  update bills
+     set status = 'cancelled', cancelled_at = now(), cancelled_by = auth.uid(),
+         cancellation_reason = btrim(p_reason)
+   where id = v_bill.id;
 
   if v_bill.ledger_posted_at is not null then
     perform append_ledger_entry(
@@ -277,7 +298,7 @@ create or replace function record_ledger_adjustment(
   p_description text
 ) returns numeric
 language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 begin
   if not current_role_is('admin') then
@@ -299,12 +320,12 @@ $$;
 -- Function privileges: nothing is executable by anon/public; only the four
 -- entry points below are executable by signed-in users, and each enforces
 -- its own role check. append_ledger_entry is internal only.
-revoke execute on function append_ledger_entry(uuid, text, text, uuid, text, numeric, numeric) from public, anon, authenticated;
+revoke execute on function append_ledger_entry(uuid, text, text, uuid, text, numeric, numeric, date) from public, anon, authenticated;
 revoke execute on function post_bill_to_ledger(uuid) from public, anon;
-revoke execute on function record_payment(uuid, uuid, numeric, text, text, text, date) from public, anon;
+revoke execute on function record_payment(uuid, uuid, numeric, text, text, text, date, text) from public, anon;
 revoke execute on function cancel_bill(uuid, text) from public, anon;
 revoke execute on function record_ledger_adjustment(uuid, text, numeric, numeric, text) from public, anon;
 grant execute on function post_bill_to_ledger(uuid) to authenticated;
-grant execute on function record_payment(uuid, uuid, numeric, text, text, text, date) to authenticated;
+grant execute on function record_payment(uuid, uuid, numeric, text, text, text, date, text) to authenticated;
 grant execute on function cancel_bill(uuid, text) to authenticated;
 grant execute on function record_ledger_adjustment(uuid, text, numeric, numeric, text) to authenticated;

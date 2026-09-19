@@ -40,8 +40,8 @@ async function bootstrap(db) {
     grant usage on schema auth to anon, authenticated, app_owner;
     grant execute on function auth.uid() to anon, authenticated, app_owner;
     grant select, references on auth.users to app_owner;
-    grant all on schema public to app_owner;
-    grant usage on schema public to anon, authenticated;
+    alter schema public owner to app_owner;  -- as on Supabase, the schema owner is the migration role
+    grant usage, create on schema public to anon, authenticated;  -- Supabase default; 010 must revoke CREATE
     -- Supabase default privileges for objects created by the migration role:
     alter default privileges for role app_owner in schema public grant all on tables to anon, authenticated;
     alter default privileges for role app_owner in schema public grant all on sequences to anon, authenticated;
@@ -202,6 +202,13 @@ await fails(db, 'client cannot update grand_total', `update bills set grand_tota
 await fails(db, 'client cannot update amount_received', `update bills set amount_received = 5 where id=$1`, /permission denied/, [billId])
 await fails(db, 'client cannot update payment_status', `update bills set payment_status = 'paid' where id=$1`, /permission denied/, [billId])
 await fails(db, 'client cannot mark a bill posted', `update bills set ledger_posted_at = now() where id=$1`, /permission denied/, [billId])
+await fails(db, 'a half-filled line (quantity only) is rejected', `insert into bill_items (bill_id, description, quantity) values ($1,'x',5)`, /bill_item_financials_together/, [billId])
+await fails(db, 'a half-filled line (rate + amount, no quantity) is rejected', `insert into bill_items (bill_id, description, rate, amount) values ($1,'x',10,10)`, /bill_item_financials_together/, [billId])
+await fails(db, 'a half-filled line (amount only) is rejected', `insert into bill_items (bill_id, description, amount) values ($1,'x',10)`, /bill_item_financials_together/, [billId])
+const qt = (await one(db, `insert into quotations (quotation_number, customer_id) values ('Q-TEST-1',$1) returning id`, [customerId])).id
+await fails(db, 'quotation lines follow the same all-or-none rule', `insert into quotation_items (quotation_id, description, quantity) values ($1,'x',5)`, /quotation_item_financials_together/, [qt])
+await db.query(`insert into quotation_items (quotation_id, description) values ($1,'descriptive quotation line')`, [qt])
+ok('quotation lines may be descriptive (all NULL)')
 // derived values follow the inputs
 await db.query(`update bills set discount_amount = 400 where id=$1`, [billId])
 b = await one(db, 'select * from bills where id=$1', [billId])
@@ -225,6 +232,12 @@ eq('un-posted bill: a data-entry mistake (line, number) can be corrected and tot
 await db.query(`delete from bill_items where id=$1`, [ci])
 eq('un-posted bill: removing the line brings the total back to a real 0', (await one(db, 'select grand_total from bills where id=$1', [cb])).grand_total, '0.00')
 
+const rb = (await one(db, `insert into bills (bill_type,bill_number,bill_number_source,customer_id,cgst_percent,sgst_percent) values ('normal','R-1','manual',$1,2.5,2.5) returning id`, [customerId])).id
+await db.query(`insert into bill_items (bill_id, description, quantity, rate, amount) values ($1,'rounding probe',1,23401,23401)`, [rb])
+const rr = await one(db, 'select cgst_amount, sgst_amount, grand_total from bills where id=$1', [rb])
+eq('rounding: exact numeric, half rounds up to the paisa (23,401 x 2.5% = 585.025 -> 585.03)', rr.cgst_amount + '/' + rr.sgst_amount + '/' + rr.grand_total, '585.03/585.03/24571.06')
+eq('bill_date defaults to the business date (Asia/Kolkata), not the server date', (await one(db, `select (bill_date = (now() at time zone 'Asia/Kolkata')::date) ok from bills where id=$1`, [rb])).ok, true)
+await fails(db, 'bill number with surrounding whitespace is rejected', `insert into bills (bill_type,bill_number,bill_number_source,customer_id) values ('normal',' 52','manual',$1)`, /check/, [customerId])
 // ---------------------------------------------------------------------------
 console.log('\n== Bill numbering ==')
 await db.query(`insert into bills (bill_type,bill_number,bill_number_source,customer_id) values ('ev','52','manual',$1)`, [customerId])
@@ -253,6 +266,11 @@ ok('posted bill: non-financial edits still allowed')
 eq('staff sees no ledger rows (admin-only)', (await rows(db, 'select * from customer_ledger')).length, 0)
 const cut2 = await one(db, `select * from bill_items where bill_id=$1 and description='Temple cutting'`, [billId])
 check('after posting the bill, "Temple cutting" quantity/unit/rate/amount/hsn are still NULL', cut2.quantity === null && cut2.unit === null && cut2.rate === null && cut2.amount === null && cut2.hsn_code === null)
+await fails(db, 'posted bill: an existing line cannot be deleted', `delete from bill_items where bill_id=$1 and description='Temple cutting'`, /read-only/, [billId])
+await fails(db, 'posted bill: a line cannot be edited', `update bill_items set description='changed' where bill_id=$1`, /read-only/, [billId])
+await fails(db, 'posted bill: bill date cannot change', `update bills set bill_date='2026-02-01' where id=$1`, /posted to the ledger/, [billId])
+await db.query(`update bills set eway_bill_number='EWB-TEST' where id=$1`, [billId])
+ok('posted bill: E-Way Bill / vehicle details can still be completed later')
 await fails(db, 'staff cannot insert a ledger row directly', `insert into customer_ledger (customer_id,transaction_type,debit,running_balance) values ($1,'adjustment',5,5)`, /permission denied/, [customerId])
 await fails(db, 'staff cannot insert a payment directly', `insert into payments (payment_number,customer_id,amount,payment_mode) values ('P',$1,5,'cash')`, /permission denied/, [customerId])
 await fails(db, 'staff cannot call the internal ledger primitive', `select append_ledger_entry($1,'adjustment',null,null,'x',5,0)`, /permission denied/, [customerId])
@@ -279,6 +297,18 @@ await fails(db, 'no payment may exceed a settled bill', `select record_payment($
 await db.query(`select record_payment($1,null,500,'cash','on-account',null)`, [other])
 ok('on-account payment (no bill) recorded for a customer')
 
+await asOwner(db)
+eq('ledger debit is dated with the bill date (25-01-2026), not the posting day', (await one(db, `select to_char(transaction_date,'YYYY-MM-DD') d from customer_ledger where transaction_type='bill' and reference_id=$1`, [billId])).d, '2026-01-25')
+await asUser(db, STAFF)
+const cc = (await one(db, `insert into customers (customer_name) values ('Test Customer C') returning id`)).id
+const p9 = await one(db, `select * from record_payment($1,null,100,'cash',null,null,null,'KEY-1')`, [cc])
+const p9b = await one(db, `select * from record_payment($1,null,100,'cash',null,null,null,'KEY-1')`, [cc])
+eq('idempotent retry returns the same payment', p9.id, p9b.id)
+await fails(db, 'idempotency key reused for a different amount is rejected', `select record_payment($1,null,250,'cash',null,null,null,'KEY-1')`, /already used for a different payment/, [cc])
+await asOwner(db)
+eq('idempotent retry produced one payment and ONE ledger credit', (await one(db, `select (select count(*) from payments where customer_id=$1)::int || '/' || (select count(*) from customer_ledger where customer_id=$1)::int c`, [cc])).c, '1/1')
+await fails(db, 'DB-level: a payment cannot pair a bill with another customer', `insert into payments (payment_number,customer_id,bill_id,amount,payment_mode) values ('X-1','${cc}','${billId}',1,'cash')`, /payments_bill_customer_fk/)
+await asUser(db, STAFF)
 await asUser(db, ADMIN)
 const cut3 = await one(db, `select * from bill_items where bill_id=$1 and description='Temple cutting'`, [billId])
 check('after payments too, "Temple cutting" is still NULL (never coerced to 0)', cut3.quantity === null && cut3.rate === null && cut3.amount === null)
@@ -324,6 +354,15 @@ const after = (await one(db, `select running_balance from customer_ledger where 
 check('cancelling a posted bill reverses its ledger debit', Number(after) === Number(before) - 300, `${before} -> ${after}`)
 eq('cancelled bill status', (await one(db, 'select status from bills where id=$1', [b3])).status, 'cancelled')
 await fails(db, 'a cancelled bill cannot be posted or paid again', `select record_payment(null,$1,1,'cash')`, /cancelled/, [b3])
+const cx = await one(db, 'select status, bill_number, cancelled_by, cancellation_reason, balance_due, ledger_posted_at is not null posted, cancelled_at is not null at from bills where id=$1', [b3])
+check('cancelled bill keeps its number and posting history, records who/why, and owes nothing',
+  cx.bill_number === '54' && cx.posted && cx.at && cx.cancelled_by === ADMIN && cx.cancellation_reason === 'entered by mistake' && cx.balance_due === '0.00', JSON.stringify(cx))
+await fails(db, 'cancelling twice is rejected (no duplicate reversal)', `select cancel_bill($1,'again')`, /already cancelled/, [b3])
+eq('exactly one cancellation reversal in the ledger', (await one(db, `select count(*)::int c from customer_ledger where transaction_type='adjustment' and reference_id=$1`, [b3])).c, 1)
+await fails(db, 'cancelled bill is read-only (header)', `update bills set notes='x' where id=$1`, /read-only/, [b3])
+await fails(db, 'cancelled bill is read-only (lines)', `insert into bill_items (bill_id, description) values ($1,'late')`, /read-only|cancelled/, [b3])
+await fails(db, 'cancelled bill cannot be re-posted', `select post_bill_to_ledger($1)`, /cancelled/, [b3])
+eq('admin cannot delete a cancelled bill (number stays traceable)', (await db.query(`delete from bills where id=$1`, [b3])).affectedRows, 0)
 await db.query(`select record_ledger_adjustment($1,'opening_balance',1000,0,'carried forward (test)')`, [other])
 ok('admin can post an opening balance with a description')
 await fails(db, 'adjustment without description is rejected', `select record_ledger_adjustment($1,'adjustment',1,0,'')`, /description is required/, [other])
@@ -363,6 +402,20 @@ const hist = await one(db, `select count(*)::int c, bool_and(new_quantity = prev
 check('movement history is internally consistent and attributed to the session user', hist.c === 5 && hist.chain && hist.who, JSON.stringify(hist))
 await fails(db, 'stock movements cannot be edited', `update stock_movements set quantity_change = 1`, /permission denied/)
 await fails(db, 'stock movements cannot be deleted', `delete from stock_movements`, /permission denied/)
+
+// A bill never moves stock by itself.
+{
+  const movesBefore = (await one(db, 'select count(*)::int c from stock_movements')).c
+  await asUser(db, STAFF)
+  const sb = (await one(db, `insert into bills (bill_type,bill_number,bill_number_source,customer_id) values ('normal','S-1','manual',$1) returning id`, [customerId])).id
+  await db.query(`insert into bill_items (bill_id, description, quantity, rate, amount, stock_item_id) values ($1,'linked stock line',3,10,30,$2)`, [sb, si])
+  await db.query(`select post_bill_to_ledger($1)`, [sb])
+  await asOwner(db)
+  const movesAfter = (await one(db, 'select count(*)::int c from stock_movements')).c
+  const qty = (await one(db, 'select quantity_on_hand q from stock_items where id=$1', [si])).q
+  check('creating and posting a bill linked to a stock item created NO stock movement and left stock at 113', movesBefore === movesAfter && qty === '113.000', `${movesBefore}->${movesAfter}, qty ${qty}`)
+  await asUser(db, STAFF)
+}
 
 // ---------------------------------------------------------------------------
 console.log('\n== Measurement sheet ==')
@@ -433,6 +486,16 @@ await fails(db, 'even admin cannot edit the audit log', `update audit_logs set a
 await fails(db, 'even admin cannot delete ledger rows', `delete from customer_ledger`, /permission denied/)
 await fails(db, 'even admin cannot insert a ledger row directly', `insert into customer_ledger (customer_id,transaction_type,debit,running_balance) values ('${customerId}','adjustment',1,1)`, /permission denied/)
 
+await asUser(db, STAFF)
+await fails(db, 'signed-in users cannot create objects in schema public', `create function public.planted() returns int language sql as 'select 1'`, /permission denied for schema public/)
+await asOwner(db)
+eq('authenticated/anon have no CREATE on schema public', (await one(db, `select has_schema_privilege('authenticated','public','create') or has_schema_privilege('anon','public','create') x`)).x, false)
+await asUser(db, ADMIN)
+await fails(db, 'even admin cannot delete audit history', `delete from audit_logs`, /permission denied/)
+await asUser(mrd, STAFF)
+eq('a KMG staff id is nobody in the Murudeshwara database (separate auth + data)', (await one(mrd, 'select is_active_staff() x')).x, false)
+await fails(mrd, 'and cannot write there', `insert into customers (customer_name) values ('x')`, /row-level security/)
+await asOwner(mrd)
 await asUser(db, STAFF2_INACTIVE)
 eq('inactive staff see no customers', (await rows(db, 'select * from customers')).length, 0)
 await fails(db, 'inactive staff cannot create bills', `insert into bills (bill_type,bill_number,bill_number_source,customer_id) values ('normal','Z9','manual','${customerId}')`, /row-level security/)
@@ -462,8 +525,8 @@ for (const f of fns) {
   eq(`${f.proname}(): authenticated EXECUTE only if it is a client entry point`, auth, clientFns.has(f.proname))
 }
 const definers = fns.filter((f) => f.secdef)
-check('every SECURITY DEFINER function pins search_path', definers.every((f) => (f.proconfig ?? []).some((c) => c.startsWith('search_path='))),
-  definers.filter((f) => !(f.proconfig ?? []).some((c) => c.startsWith('search_path='))).map((f) => f.proname).join(','))
+check('every SECURITY DEFINER function pins search_path with pg_catalog first', definers.every((f) => (f.proconfig ?? []).some((c) => c.startsWith('search_path=pg_catalog'))),
+  definers.filter((f) => !(f.proconfig ?? []).some((c) => c.startsWith('search_path=pg_catalog'))).map((f) => f.proname).join(','))
 
 // ---------------------------------------------------------------------------
 console.log('\n== Audit trail ==')

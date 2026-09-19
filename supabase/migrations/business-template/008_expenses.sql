@@ -5,7 +5,7 @@
 create table if not exists expenses (
   id uuid primary key default gen_random_uuid(),
   expense_number text not null unique,
-  expense_date date not null default current_date,
+  expense_date date not null default (now() at time zone 'Asia/Kolkata')::date,
   expense_time time,
   category text not null check (
     category in ('fuel', 'labour', 'vehicle', 'factory', 'quarry', 'maintenance',
