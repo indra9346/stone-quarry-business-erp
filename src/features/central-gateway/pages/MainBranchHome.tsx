@@ -7,6 +7,11 @@ import { cn } from '@/lib/utils'
  * Central gateway. Static business metadata only — no operational data is
  * fetched here, and no business is entered implicitly: the user picks one,
  * which selects that business's own isolated Supabase project.
+ *
+ * Every registered business is listed. A business whose database is not
+ * connected in this installation (its VITE_<CODE>_SUPABASE_* variables are
+ * absent) is shown with a neutral "Database not connected" status and opens an
+ * informational page — never another business's data.
  */
 export default function MainBranchHome() {
   return (
@@ -21,33 +26,28 @@ export default function MainBranchHome() {
         <ul className="mt-10 divide-y divide-white/10 border-y border-white/10">
           {BUSINESS_CODES.map((code) => {
             const b = BUSINESS_REGISTRY[code]
-            const configured = isBusinessConfigured(code)
-            const inner = (
-              <div className="flex items-center justify-between gap-4 py-5">
-                <div>
-                  <p className="text-lg font-medium text-stone-100">{b.name}</p>
-                  <p className="mt-0.5 text-sm text-stone-500">{b.location ?? b.legalName}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-4">
-                  <span className={cn('flex items-center gap-2 text-xs', configured ? 'text-emerald-400' : 'text-stone-500')}>
-                    <span className={cn('h-1.5 w-1.5 rounded-full', configured ? 'bg-emerald-400' : 'bg-stone-600')} aria-hidden />
-                    {configured ? 'Connected' : 'Configuration pending'}
-                  </span>
-                  {configured && <span className="text-sm font-medium text-amber-500">Enter →</span>}
-                </div>
-              </div>
-            )
+            const connected = isBusinessConfigured(code)
             return (
               <li key={code}>
-                {configured ? (
-                  <Link to={`/business/${code}`} className="-mx-3 block rounded px-3 transition-colors hover:bg-white/5">
-                    {inner}
-                  </Link>
-                ) : (
-                  <div aria-disabled className="-mx-3 px-3 opacity-70">
-                    {inner}
+                <Link to={`/business/${code}`} className="-mx-3 block rounded px-3 transition-colors hover:bg-white/5">
+                  <div className="flex items-center justify-between gap-4 py-5">
+                    <div>
+                      <p className="text-lg font-medium text-stone-100">{b.name}</p>
+                      <p className="mt-0.5 text-sm text-stone-500">
+                        {connected ? (b.location ?? b.legalName) : 'Operational workspace is not yet provisioned.'}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-4">
+                      <span className={cn('flex items-center gap-2 text-xs', connected ? 'text-emerald-400' : 'text-stone-400')}>
+                        <span className={cn('h-1.5 w-1.5 rounded-full', connected ? 'bg-emerald-400' : 'bg-stone-500')} aria-hidden />
+                        {connected ? 'Database connected' : 'Database not connected'}
+                      </span>
+                      <span className={cn('text-sm font-medium', connected ? 'text-amber-500' : 'text-stone-400')}>
+                        {connected ? 'Enter →' : 'Details →'}
+                      </span>
+                    </div>
                   </div>
-                )}
+                </Link>
               </li>
             )
           })}

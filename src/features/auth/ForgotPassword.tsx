@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useBusinessContext } from './businessContextValue'
 import AuthShell from './AuthShell'
+import NotProvisioned from './NotProvisioned'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input } from '@/components/ui/form'
 
@@ -11,6 +12,8 @@ export default function ForgotPassword() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  if (!configured) return <NotProvisioned />
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -24,9 +27,7 @@ export default function ForgotPassword() {
 
   return (
     <AuthShell title="Reset your password" subtitle="We will email a secure reset link.">
-      {!configured ? (
-        <p className="text-sm text-stone-600">This business portal is not configured yet.</p>
-      ) : sent ? (
+      {sent ? (
         <p className="rounded-md bg-emerald-50 px-3 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">
           If an account exists for {email}, a reset link is on its way. Check your inbox.
         </p>

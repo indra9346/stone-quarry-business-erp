@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useBusinessContext } from './businessContextValue'
 import AuthShell from './AuthShell'
+import NotProvisioned from './NotProvisioned'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input } from '@/components/ui/form'
 import { Spinner } from '@/components/ui/feedback'
@@ -14,6 +15,8 @@ export default function ResetPassword() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  if (accessState === 'unconfigured') return <NotProvisioned />
 
   if (accessState === 'loading') {
     return (

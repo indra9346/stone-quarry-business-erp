@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useBusinessContext } from './businessContextValue'
 import AuthShell from './AuthShell'
 import NoAccess from './NoAccess'
+import NotProvisioned from './NotProvisioned'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input } from '@/components/ui/form'
 import { Spinner } from '@/components/ui/feedback'
@@ -28,20 +29,7 @@ export default function BusinessSignIn() {
   if (accessState === 'ready') return <Navigate to={`/business/${code}/dashboard`} replace />
   if (accessState === 'no_access') return <NoAccess />
 
-  if (accessState === 'unconfigured') {
-    return (
-      <AuthShell title="Configuration pending" subtitle={`${profile.name} has no database connected yet.`}>
-        <div className="rounded-md bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200">
-          <p>
-            No operational data is shown for this business until its Supabase project is configured. Add{' '}
-            <code className="rounded bg-white px-1 py-0.5 text-xs">VITE_{code.toUpperCase()}_SUPABASE_URL</code> and{' '}
-            <code className="rounded bg-white px-1 py-0.5 text-xs">VITE_{code.toUpperCase()}_SUPABASE_ANON_KEY</code> to{' '}
-            <code className="rounded bg-white px-1 py-0.5 text-xs">.env.local</code> and restart.
-          </p>
-        </div>
-      </AuthShell>
-    )
-  }
+  if (accessState === 'unconfigured') return <NotProvisioned />
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
