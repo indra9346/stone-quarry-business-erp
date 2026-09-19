@@ -48,3 +48,20 @@ The screens are type-checked, linted, built and were exercised in a browser
 against a local stand-in for the Supabase API (login, dashboard, bills list and
 detail, draft bill form, Staff access-denied). They have **not** been run
 against the deployed KMG database.
+
+## Deploying (Vercel)
+- Framework preset: Vite. `vercel.json` rewrites every path to `index.html` so
+  deep links such as `/business/kmg/bills` survive a refresh.
+- Environment variables (Project → Settings → Environment Variables), public
+  values only: `VITE_KMG_SUPABASE_URL`, `VITE_KMG_SUPABASE_ANON_KEY`.
+  Never add a service-role key or database password.
+- In Supabase → Authentication → URL Configuration add the Vercel domain as the
+  Site URL and a redirect URL (password-reset emails link back to
+  `/business/kmg/reset-password`).
+- Consider turning off "Allow new users to sign up" (Authentication → Sign In /
+  Providers): logins are issued by an administrator.
+
+## Live smoke test
+`npm run smoke:kmg` runs the real service layer against the deployed project
+(see the header of `scripts/smoke-kmg.ts`). Read-only by default; `SMOKE_WRITE=1`
+creates clearly-marked TEST records.

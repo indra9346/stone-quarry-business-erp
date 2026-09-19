@@ -35,7 +35,7 @@ export default function Settings() {
         <nav className="flex gap-1 overflow-x-auto lg:flex-col" aria-label="Settings sections">
           {TABS.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)} aria-current={tab === t.id}
-              className={cn('whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-medium transition-colors', tab === t.id ? 'bg-navy-800 text-white' : 'text-slate-600 hover:bg-slate-200/70')}>
+              className={cn('whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-medium transition-colors', tab === t.id ? 'bg-navy-800 text-white' : 'text-stone-600 hover:bg-stone-200/70')}>
               {t.label}
             </button>
           ))}
@@ -86,7 +86,7 @@ function BusinessTab() {
         <FormField label="Email">{(p) => <Input {...p} type="email" value={f.email} onChange={(e) => s('email', e.target.value)} />}</FormField>
         <FormField label="GSTIN" hint="The business's tax registration number, as it should print." className="sm:col-span-2">{(p) => <Input {...p} value={f.gstin} onChange={(e) => s('gstin', e.target.value)} />}</FormField>
       </div>
-      <div className="flex items-center justify-end gap-4 border-t border-slate-100 px-5 py-3">
+      <div className="flex items-center justify-end gap-4 border-t border-stone-100 px-5 py-3">
         <Saved ok={save.isSuccess} error={error} />
         <Button variant="primary" loading={save.isPending} onClick={() => { setError(null); save.mutate(f, { onError: (e) => setError(e.message) }) }}>Save</Button>
       </div>
@@ -108,7 +108,7 @@ function NumberingTab() {
       <div className="grid gap-4 p-5 sm:grid-cols-3">
         {labels.map(([k, l]) => <FormField key={k} label={l}>{(p) => <Input {...p} value={f[k] ?? ''} onChange={(e) => setF((s) => ({ ...s, [k]: e.target.value }))} />}</FormField>)}
       </div>
-      <div className="flex items-center justify-end gap-4 border-t border-slate-100 px-5 py-3">
+      <div className="flex items-center justify-end gap-4 border-t border-stone-100 px-5 py-3">
         <Saved ok={save.isSuccess} error={error} />
         <Button variant="primary" loading={save.isPending} onClick={() => { setError(null); save.mutate(f, { onError: (e) => setError(e.message) }) }}>Save</Button>
       </div>
@@ -145,7 +145,7 @@ function TaxTab() {
         <FormField label="SGST %">{(p) => <Input {...p} inputMode="decimal" value={f.sgst_percent} onChange={(e) => setF((s) => ({ ...s, sgst_percent: e.target.value }))} />}</FormField>
         <FormField label="IGST %">{(p) => <Input {...p} inputMode="decimal" value={f.igst_percent} onChange={(e) => setF((s) => ({ ...s, igst_percent: e.target.value }))} />}</FormField>
       </div>
-      <div className="flex items-center justify-end gap-4 border-t border-slate-100 px-5 py-3">
+      <div className="flex items-center justify-end gap-4 border-t border-stone-100 px-5 py-3">
         <Saved ok={save.isSuccess} error={error} />
         <Button variant="primary" loading={save.isPending} onClick={submit}>Save</Button>
       </div>
@@ -157,7 +157,7 @@ function BillingTab() {
   return (
     <Card>
       <CardHeader title="Billing rules" description="These are enforced by the database and are not configurable." />
-      <ul className="list-disc space-y-2 p-5 pl-9 text-sm text-slate-700">
+      <ul className="list-disc space-y-2 p-5 pl-9 text-sm text-stone-700">
         <li>Bill totals are calculated by the database from the lines, discount, tax percentages and other charges — to the paisa (2 decimals).</li>
         <li>A line is either descriptive (no quantity, rate or amount) or fully priced (quantity × rate).</li>
         <li>Bill numbers are unique per bill type: Normal 52 and EV 52 can both exist.</li>
@@ -186,7 +186,7 @@ function StockTab() {
       <Card>
         <CardHeader title="Units" description="Units the business measures in. None is preset — add only what you actually use. A unit is always optional on a line or stock item." />
         <DataTable dense columns={columns} rows={units.data} rowKey={(u) => u.code} loading={units.isLoading} error={units.error} empty={{ title: 'No units defined yet' }} />
-        <div className="grid gap-3 border-t border-slate-100 p-5 sm:grid-cols-4 sm:items-end">
+        <div className="grid gap-3 border-t border-stone-100 p-5 sm:grid-cols-4 sm:items-end">
           <FormField label="Code">{(p) => <Input {...p} value={code} onChange={(e) => setCode(e.target.value)} />}</FormField>
           <FormField label="Label">{(p) => <Input {...p} value={label} onChange={(e) => setLabel(e.target.value)} />}</FormField>
           <FormField label="Kind">{(p) => <Select {...p} value={kind} onChange={(e) => setKind(e.target.value as Unit['measurement_kind'])}><option value="other">Other</option><option value="count">Count</option><option value="area">Area</option><option value="volume">Volume</option><option value="weight">Weight</option></Select>}</FormField>
@@ -200,7 +200,7 @@ function StockTab() {
       </Card>
       <Card>
         <CardHeader title="Stock rules" description="Enforced by the database." />
-        <ul className="list-disc space-y-2 p-5 pl-9 text-sm text-slate-700">
+        <ul className="list-disc space-y-2 p-5 pl-9 text-sm text-stone-700">
           <li>Stock is movement-based; current stock = opening + received − used/sold ± adjustments.</li>
           <li>Stock can never go below zero, and quantities cannot be edited directly.</li>
           <li>Bills and measurement sheets do not move stock; only explicit movements do.</li>
@@ -221,7 +221,7 @@ function UsersTab() {
   const [error, setError] = useState<string | null>(null)
 
   const columns: Column<StaffProfile>[] = [
-    { key: 'n', header: 'Name', cell: (s) => <span className="font-medium text-slate-900">{s.full_name}{s.user_id === userId ? ' (you)' : ''}</span> },
+    { key: 'n', header: 'Name', cell: (s) => <span className="font-medium text-stone-900">{s.full_name}{s.user_id === userId ? ' (you)' : ''}</span> },
     { key: 'r', header: 'Role', cell: (s) => (
       <Select aria-label={`Role for ${s.full_name}`} className="w-28" value={s.role} disabled={s.user_id === userId} onChange={(e) => update.mutate({ id: s.user_id, patch: { role: e.target.value as 'admin' | 'staff' } }, { onError: (er) => setError(er.message) })}>
         <option value="admin">Admin</option><option value="staff">Staff</option>
@@ -272,8 +272,8 @@ function PermissionsTab() {
       <CardHeader title="Role permissions" description="Enforced by the database (row-level security and column privileges), not just by the menu. Shown here for reference; they cannot be changed from the browser." />
       <div className="overflow-x-auto">
         <table className="w-full min-w-[480px] text-sm">
-          <thead><tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"><th className="px-5 py-2.5">Area</th><th className="px-3 py-2.5">Admin</th><th className="px-3 py-2.5">Staff</th></tr></thead>
-          <tbody>{rows.map(([a, ad, st]) => <tr key={a} className="border-t border-slate-100"><td className="px-5 py-2.5">{a}</td><td className="px-3 py-2.5"><StatusBadge tone={ad === 'Yes' ? 'success' : 'neutral'}>{ad}</StatusBadge></td><td className="px-3 py-2.5"><StatusBadge tone={st === 'Yes' ? 'success' : 'neutral'}>{st}</StatusBadge></td></tr>)}</tbody>
+          <thead><tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-stone-500"><th className="px-5 py-2.5">Area</th><th className="px-3 py-2.5">Admin</th><th className="px-3 py-2.5">Staff</th></tr></thead>
+          <tbody>{rows.map(([a, ad, st]) => <tr key={a} className="border-t border-stone-100"><td className="px-5 py-2.5">{a}</td><td className="px-3 py-2.5"><StatusBadge tone={ad === 'Yes' ? 'success' : 'neutral'}>{ad}</StatusBadge></td><td className="px-3 py-2.5"><StatusBadge tone={st === 'Yes' ? 'success' : 'neutral'}>{st}</StatusBadge></td></tr>)}</tbody>
         </table>
       </div>
     </Card>
@@ -294,7 +294,7 @@ function SystemTab() {
         {[
           ['Business', profile.name], ['Business code', code], ['Database host', host], ['Signed in as', `${email ?? '—'} (${role})`],
           ['Business timezone', 'Asia/Kolkata'], ['Currency', 'INR (₹)'], ['Connection check', probe.isLoading ? 'Checking…' : probe.error ? `Failed: ${probe.error.message}` : 'OK'],
-        ].map(([k, v]) => <div key={k} className="flex justify-between gap-6"><dt className="text-slate-500">{k}</dt><dd className="break-all text-right font-medium text-slate-900">{v}</dd></div>)}
+        ].map(([k, v]) => <div key={k} className="flex justify-between gap-6"><dt className="text-stone-500">{k}</dt><dd className="break-all text-right font-medium text-stone-900">{v}</dd></div>)}
       </dl>
     </Card>
   )

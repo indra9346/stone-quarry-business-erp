@@ -86,14 +86,14 @@ export default function BillDetail() {
         }
       />
 
-      <div className="mb-4 flex gap-1 border-b border-slate-200 no-print" role="tablist">
+      <div className="mb-4 flex gap-1 border-b border-stone-200 no-print" role="tablist">
         {(['details', 'document'] as const).map((v) => (
           <button
             key={v}
             role="tab"
             aria-selected={view === v}
             onClick={() => setView(v)}
-            className={cn('-mb-px border-b-2 px-4 py-2 text-sm font-medium', view === v ? 'border-amber-500 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800')}
+            className={cn('-mb-px border-b-2 px-4 py-2 text-sm font-medium', view === v ? 'border-amber-500 text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-800')}
           >
             {v === 'details' ? 'Details' : 'Print view'}
           </button>
@@ -125,7 +125,7 @@ export default function BillDetail() {
               <div className="overflow-x-auto scroll-thin">
                 <table className="w-full min-w-[560px] text-sm">
                   <thead>
-                    <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                       <th className="px-5 py-2.5">Particulars</th>
                       <th className="px-3 py-2.5">HSN</th>
                       <th className="px-3 py-2.5 text-right">Qty</th>
@@ -136,14 +136,14 @@ export default function BillDetail() {
                   <tbody>
                     {items.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-5 py-8 text-center text-slate-500">
+                        <td colSpan={5} className="px-5 py-8 text-center text-stone-500">
                           No lines on this bill.
                         </td>
                       </tr>
                     )}
                     {items.map((it) => (
-                      <tr key={it.id} className="border-t border-slate-100">
-                        <td className="px-5 py-2.5 font-medium text-slate-900">{it.description}</td>
+                      <tr key={it.id} className="border-t border-stone-100">
+                        <td className="px-5 py-2.5 font-medium text-stone-900">{it.description}</td>
                         <td className="px-3 py-2.5">{it.hsn_code ?? '—'}</td>
                         <td className="px-3 py-2.5 text-right">
                           <QuantityDisplay value={it.quantity} unit={it.unit} />
@@ -164,14 +164,14 @@ export default function BillDetail() {
             <Card>
               <CardHeader title="Payments received against this bill" />
               {payments.length === 0 ? (
-                <p className="px-5 py-8 text-center text-sm text-slate-500">No payments recorded.</p>
+                <p className="px-5 py-8 text-center text-sm text-stone-500">No payments recorded.</p>
               ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-stone-100">
                   {payments.map((p) => (
                     <li key={p.id} className="flex items-center justify-between px-5 py-3 text-sm">
                       <div>
-                        <p className="font-medium text-slate-900">{p.payment_number}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="font-medium text-stone-900">{p.payment_number}</p>
+                        <p className="text-xs text-stone-500">
                           {formatDate(p.payment_date)} · {p.payment_mode.replace('_', ' ')}
                           {p.reference_number ? ` · ${p.reference_number}` : ''}
                         </p>
@@ -189,7 +189,7 @@ export default function BillDetail() {
               <CardHeader title="Summary" />
               <dl className="space-y-2 p-5 text-sm">
                 <div className="flex items-center justify-between">
-                  <dt className="text-slate-500">Status</dt>
+                  <dt className="text-stone-500">Status</dt>
                   <dd className="flex items-center gap-2">
                     <BillTypeBadge type={bill.bill_type} />
                     <BillStateBadge bill={bill} />
@@ -201,7 +201,7 @@ export default function BillDetail() {
                 {bill.sgst_percent !== null && <Row label={`SGST ${formatPercent(bill.sgst_percent)}`} value={bill.sgst_amount} />}
                 {bill.igst_percent !== null && <Row label={`IGST ${formatPercent(bill.igst_percent)}`} value={bill.igst_amount} />}
                 {bill.other_charges !== null && <Row label="Other charges" value={bill.other_charges} />}
-                <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-base font-semibold text-slate-900">
+                <div className="flex items-center justify-between border-t border-stone-200 pt-2 text-base font-semibold text-stone-900">
                   <dt>Grand total</dt>
                   <dd>
                     <CurrencyDisplay value={bill.grand_total} />
@@ -209,14 +209,14 @@ export default function BillDetail() {
                 </div>
                 <Row label="Received" value={bill.amount_received} />
                 <div className="flex items-center justify-between font-medium">
-                  <dt className="text-slate-700">Balance due</dt>
+                  <dt className="text-stone-700">Balance due</dt>
                   <dd>
                     <CurrencyDisplay value={bill.balance_due} className={bill.balance_due > 0 ? 'text-amber-700' : ''} />
                   </dd>
                 </div>
                 {state !== 'cancelled' && (
                   <div className="flex items-center justify-between">
-                    <dt className="text-slate-500">Payment</dt>
+                    <dt className="text-stone-500">Payment</dt>
                     <dd>
                       <PaymentStatusBadge status={bill.payment_status} />
                     </dd>
@@ -230,7 +230,7 @@ export default function BillDetail() {
               <dl className="space-y-2 p-5 text-sm">
                 <Field label="Customer">
                   {bill.customers ? (
-                    <Link className="text-cyan-700 hover:underline" to={`/business/${code}/customers/${bill.customers.id}`}>
+                    <Link className="text-amber-800 hover:underline" to={`/business/${code}/customers/${bill.customers.id}`}>
                       {bill.customers.customer_name}
                     </Link>
                   ) : (
@@ -290,7 +290,7 @@ export default function BillDetail() {
 function Row({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="flex items-center justify-between">
-      <dt className="text-slate-500">{label}</dt>
+      <dt className="text-stone-500">{label}</dt>
       <dd>
         <CurrencyDisplay value={value} />
       </dd>
@@ -301,14 +301,14 @@ function Row({ label, value }: { label: string; value: number | null }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="shrink-0 text-slate-500">{label}</dt>
-      <dd className="break-words text-right text-slate-900">{children}</dd>
+      <dt className="shrink-0 text-stone-500">{label}</dt>
+      <dd className="break-words text-right text-stone-900">{children}</dd>
     </div>
   )
 }
 
 function Banner({ icon, tone, children }: { icon?: React.ReactNode; tone: 'info' | 'danger' | 'warning'; children: React.ReactNode }) {
-  const cls = { info: 'bg-cyan-50 text-cyan-900 ring-cyan-200', danger: 'bg-red-50 text-red-900 ring-red-200', warning: 'bg-amber-50 text-amber-900 ring-amber-200' }[tone]
+  const cls = { info: 'bg-sky-50 text-sky-900 ring-sky-200', danger: 'bg-red-50 text-red-900 ring-red-200', warning: 'bg-amber-50 text-amber-900 ring-amber-200' }[tone]
   return (
     <div className={cn('flex gap-2.5 rounded-md px-4 py-3 text-sm ring-1', cls)}>
       {icon && <span className="mt-0.5 shrink-0">{icon}</span>}

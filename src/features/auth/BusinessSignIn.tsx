@@ -76,7 +76,7 @@ export default function BusinessSignIn() {
           Sign in to {profile.name.split(' ')[0]}
         </Button>
         <div className="text-center">
-          <Link to={`/business/${code}/forgot-password`} className="text-sm text-cyan-700 hover:underline">
+          <Link to={`/business/${code}/forgot-password`} className="text-sm text-amber-800 hover:underline">
             Forgot password?
           </Link>
         </div>

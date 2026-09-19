@@ -42,12 +42,12 @@ export default function AuditLogs() {
       <PageHeader title="Audit logs" description="A read-only record of every change, written by the database. It cannot be edited or deleted." />
       <Card>
         <FilterBar>
-          <label className="block text-xs font-medium text-slate-600">Entity
+          <label className="block text-xs font-medium text-stone-600">Entity
             <Select className="mt-1 w-48" value={module} onChange={(e) => { setModule(e.target.value); setPage(0) }}>
               <option value="">All</option>{MODULES.map((m) => <option key={m} value={m}>{m.replace(/_/g, ' ')}</option>)}
             </Select>
           </label>
-          <label className="block text-xs font-medium text-slate-600">Action
+          <label className="block text-xs font-medium text-stone-600">Action
             <Select className="mt-1 w-36" value={action} onChange={(e) => { setAction(e.target.value); setPage(0) }}>
               <option value="">All</option><option value="INSERT">Insert</option><option value="UPDATE">Update</option><option value="DELETE">Delete</option>
             </Select>
@@ -61,8 +61,8 @@ export default function AuditLogs() {
       <Modal open={open !== null} onOpenChange={(o) => !o && setOpen(null)} size="xl" title={open ? `${open.action} · ${open.module.replace(/_/g, ' ')}` : ''} description={open ? formatDateTime(open.created_at) : undefined}>
         {open && (
           <div className="grid gap-4 md:grid-cols-2">
-            <div><p className="mb-1 text-xs font-semibold uppercase text-slate-500">Before</p><pre className="max-h-96 overflow-auto rounded-md bg-slate-50 p-3 text-xs">{open.previous_values ? JSON.stringify(open.previous_values, null, 2) : '—'}</pre></div>
-            <div><p className="mb-1 text-xs font-semibold uppercase text-slate-500">After</p><pre className="max-h-96 overflow-auto rounded-md bg-slate-50 p-3 text-xs">{open.new_values ? JSON.stringify(open.new_values, null, 2) : '—'}</pre></div>
+            <div><p className="mb-1 text-xs font-semibold uppercase text-stone-500">Before</p><pre className="max-h-96 overflow-auto rounded-md bg-stone-50 p-3 text-xs">{open.previous_values ? JSON.stringify(open.previous_values, null, 2) : '—'}</pre></div>
+            <div><p className="mb-1 text-xs font-semibold uppercase text-stone-500">After</p><pre className="max-h-96 overflow-auto rounded-md bg-stone-50 p-3 text-xs">{open.new_values ? JSON.stringify(open.new_values, null, 2) : '—'}</pre></div>
           </div>
         )}
       </Modal>

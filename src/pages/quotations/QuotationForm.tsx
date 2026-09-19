@@ -146,7 +146,7 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
             <CardHeader title="Quotation details" />
             <div className="grid gap-4 p-5 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <span className="mb-1 block text-xs font-medium text-slate-600">Quotation number *</span>
+                <span className="mb-1 block text-xs font-medium text-stone-600">Quotation number *</span>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <label className="flex items-center gap-2">
                     <input type="radio" name="qnum" checked={numberMode === 'generated'} disabled={mode === 'edit'} onChange={() => setNumberMode('generated')} />
@@ -160,7 +160,7 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
                 {numberMode === 'manual' ? (
                   <Input className="mt-2 max-w-xs" aria-label="Quotation number" value={number} onChange={(e) => setNumber(e.target.value)} />
                 ) : (
-                  <p className="mt-2 text-xs text-slate-500">A number with prefix “{prefix}” is issued on save. The business's own format is not confirmed yet.</p>
+                  <p className="mt-2 text-xs text-stone-500">A number with prefix “{prefix}” is issued on save. The business's own format is not confirmed yet.</p>
                 )}
               </div>
               <FormField label="Customer" required className="sm:col-span-2">
@@ -206,10 +206,10 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
               <FormField label="Other charges">{(p) => <Input {...p} inputMode="decimal" value={other} onChange={(e) => setOther(e.target.value)} />}</FormField>
             </div>
           </Card>
-          <section className="rounded-lg bg-navy-900 p-5 text-slate-200 shadow-card">
+          <section className="rounded-lg bg-navy-900 p-5 text-stone-200 shadow-card">
             <h2 className="text-sm font-semibold text-white">Totals</h2>
             <dl className="tabular mt-3 space-y-1.5 text-sm">
-              <div className="flex justify-between"><dt className="text-slate-400">Subtotal</dt><dd>{formatINR(totals.subtotal)}</dd></div>
+              <div className="flex justify-between"><dt className="text-stone-400">Subtotal</dt><dd>{formatINR(totals.subtotal)}</dd></div>
               <div className="flex justify-between border-t border-white/10 pt-2 text-base font-semibold text-amber-400"><dt>Total</dt><dd>{formatINR(totals.grand_total)}</dd></div>
             </dl>
           </section>

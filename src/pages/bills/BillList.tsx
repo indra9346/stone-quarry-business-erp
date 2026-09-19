@@ -29,7 +29,7 @@ export default function BillList({ type }: { type?: BillType }) {
   )
 
   const columns: Column<BillRow>[] = [
-    { key: 'number', header: 'Bill no.', sortValue: (b) => b.bill_number, cell: (b) => <span className="font-medium text-slate-900">{b.bill_number}</span> },
+    { key: 'number', header: 'Bill no.', sortValue: (b) => b.bill_number, cell: (b) => <span className="font-medium text-stone-900">{b.bill_number}</span> },
     { key: 'type', header: 'Type', cell: (b) => <BillTypeBadge type={b.bill_type} /> },
     { key: 'date', header: 'Date', sortValue: (b) => b.bill_date, cell: (b) => formatDate(b.bill_date) },
     { key: 'customer', header: 'Customer', sortValue: (b) => b.customers?.customer_name ?? null, cell: (b) => b.party_name || b.customers?.customer_name || '—' },
@@ -62,7 +62,7 @@ export default function BillList({ type }: { type?: BillType }) {
         }
       />
       <Card>
-        <div className="flex gap-1 border-b border-slate-200 px-3 pt-2" role="tablist">
+        <div className="flex gap-1 border-b border-stone-200 px-3 pt-2" role="tablist">
           {tabs.map((t) => (
             <NavLink
               key={t.to}
@@ -70,7 +70,7 @@ export default function BillList({ type }: { type?: BillType }) {
               end={t.end}
               role="tab"
               className={({ isActive }) =>
-                cn('-mb-px rounded-t-md border-b-2 px-4 py-2 text-sm font-medium transition-colors', isActive ? 'border-amber-500 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800')
+                cn('-mb-px rounded-t-md border-b-2 px-4 py-2 text-sm font-medium transition-colors', isActive ? 'border-amber-500 text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-800')
               }
             >
               {t.label}
@@ -81,7 +81,7 @@ export default function BillList({ type }: { type?: BillType }) {
           <div className="w-full sm:w-64">
             <SearchBar value={q} onChange={(v) => { setQ(v); setPage(0) }} placeholder="Search by bill number" />
           </div>
-          <label className="block text-xs font-medium text-slate-600">
+          <label className="block text-xs font-medium text-stone-600">
             Status
             <Select className="mt-1 w-36" value={state} onChange={(e) => { setState(e.target.value as BillState | 'all'); setPage(0) }}>
               <option value="all">All</option>

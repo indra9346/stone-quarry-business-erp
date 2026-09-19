@@ -56,14 +56,14 @@ export function StockList() {
   const query = useBizQuery(['stock', 'list', category, dq], (c) => listStock(c, { category: category || undefined, q: dq }))
 
   const columns: Column<StockRow>[] = [
-    { key: 'name', header: 'Material', sortValue: (r) => r.materials?.name ?? null, cell: (r) => <span className="font-medium text-slate-900">{r.materials?.name ?? '—'}</span> },
+    { key: 'name', header: 'Material', sortValue: (r) => r.materials?.name ?? null, cell: (r) => <span className="font-medium text-stone-900">{r.materials?.name ?? '—'}</span> },
     { key: 'cat', header: 'Category', cell: (r) => <StatusBadge>{CATEGORY_LABEL[r.materials?.category ?? ''] ?? '—'}</StatusBadge> },
     { key: 'batch', header: 'Batch / location', cell: (r) => [r.batch_code, r.location].filter(Boolean).join(' · ') || '—' },
     { key: 'open', header: 'Opening', numeric: true, cell: (r) => <QuantityDisplay value={r.opening_quantity} unit={r.unit} /> },
     { key: 'recv', header: 'Received', numeric: true, cell: (r) => <QuantityDisplay value={r.received_quantity} unit={r.unit} /> },
     { key: 'used', header: 'Used / sold', numeric: true, cell: (r) => <QuantityDisplay value={r.used_quantity} unit={r.unit} /> },
     { key: 'adj', header: 'Adjustments', numeric: true, cell: (r) => <QuantityDisplay value={r.adjustment_quantity} unit={r.unit} /> },
-    { key: 'cur', header: 'Current', numeric: true, sortValue: (r) => r.current_quantity, cell: (r) => <QuantityDisplay value={r.current_quantity} unit={r.unit} className="font-semibold text-slate-900" /> },
+    { key: 'cur', header: 'Current', numeric: true, sortValue: (r) => r.current_quantity, cell: (r) => <QuantityDisplay value={r.current_quantity} unit={r.unit} className="font-semibold text-stone-900" /> },
   ]
 
   return (
@@ -86,7 +86,7 @@ export function StockList() {
       <Card>
         <FilterBar>
           <div className="w-full sm:w-64"><SearchBar value={q} onChange={setQ} placeholder="Search material or batch" /></div>
-          <label className="block text-xs font-medium text-slate-600">
+          <label className="block text-xs font-medium text-stone-600">
             Category
             <Select className="mt-1 w-44" value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">All</option>
@@ -207,7 +207,7 @@ export function StockDetail() {
           pagination={{ page, pageSize: PAGE_SIZE, total: moves.data?.total ?? 0, onPageChange: setPage }} />
       </Card>
       <MovementDialog open={moving} onOpenChange={setMoving} stockItemId={b.stock_item_id} unit={b.unit} />
-      <p className="mt-4 text-xs text-slate-500"><Link className="text-cyan-700 hover:underline" to={`/business/${code}/stock`}>← All stock</Link></p>
+      <p className="mt-4 text-xs text-stone-500"><Link className="text-amber-800 hover:underline" to={`/business/${code}/stock`}>← All stock</Link></p>
     </div>
   )
 }

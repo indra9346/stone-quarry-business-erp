@@ -9,7 +9,7 @@ import {
 import { cn } from '@/lib/utils'
 
 const control =
-  'block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-cyan-500 disabled:bg-slate-100 disabled:text-slate-500'
+  'block w-full rounded-md border-0 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:ring-2 focus:ring-inset focus:ring-amber-500 disabled:bg-stone-100 disabled:text-stone-500'
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
   { className, ...props },
@@ -55,13 +55,13 @@ export function FormField({
   const describedBy = error || hint ? `${id}-desc` : undefined
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-xs font-medium text-slate-600">
+      <label htmlFor={id} className="mb-1 block text-xs font-medium text-stone-600">
         {label}
         {required && <span className="ml-0.5 text-red-600">*</span>}
       </label>
       {children({ id, 'aria-invalid': !!error, 'aria-describedby': describedBy })}
       {(error || hint) && (
-        <p id={describedBy} className={cn('mt-1 text-xs', error ? 'text-red-600' : 'text-slate-500')}>
+        <p id={describedBy} className={cn('mt-1 text-xs', error ? 'text-red-600' : 'text-stone-500')}>
           {error ?? hint}
         </p>
       )}

@@ -93,14 +93,14 @@ export function DataTable<T>({
                     key={c.key}
                     scope="col"
                     className={cn(
-                      'sticky top-0 z-[1] whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500',
+                      'sticky top-0 z-[1] whitespace-nowrap border-b border-stone-200 bg-stone-50 px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-500',
                       c.numeric && 'text-right',
                     )}
                   >
                     {c.sortValue ? (
                       <button
                         type="button"
-                        className={cn('inline-flex items-center gap-1 hover:text-slate-800', c.numeric && 'flex-row-reverse')}
+                        className={cn('inline-flex items-center gap-1 hover:text-stone-800', c.numeric && 'flex-row-reverse')}
                         onClick={() =>
                           setSort(!active ? { key: c.key, dir: 'asc' } : sort.dir === 'asc' ? { key: c.key, dir: 'desc' } : null)
                         }
@@ -120,14 +120,14 @@ export function DataTable<T>({
             {sorted.map((row) => (
               <tr
                 key={rowKey(row)}
-                className={cn('group transition-colors', onRowClick && 'cursor-pointer hover:bg-cyan-50/50')}
+                className={cn('group transition-colors', onRowClick && 'cursor-pointer hover:bg-sky-50/50')}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
               >
                 {columns.map((c) => (
                   <td
                     key={c.key}
                     className={cn(
-                      'border-b border-slate-100 px-4 text-slate-700',
+                      'border-b border-stone-100 px-4 text-stone-700',
                       !c.wrap && 'whitespace-nowrap',
                       dense ? 'py-1.5' : 'py-2.5',
                       c.numeric && 'tabular text-right',
@@ -143,7 +143,7 @@ export function DataTable<T>({
         </table>
       </div>
       {pagination && pagination.total > pagination.pageSize && (
-        <div className="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 text-xs text-slate-500">
+        <div className="flex items-center justify-between border-t border-stone-200 px-4 py-2.5 text-xs text-stone-500">
           <span className="tabular">
             {pagination.page * pagination.pageSize + 1}–
             {Math.min((pagination.page + 1) * pagination.pageSize, pagination.total)} of {pagination.total}

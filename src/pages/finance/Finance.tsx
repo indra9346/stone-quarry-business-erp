@@ -30,10 +30,10 @@ export function PaymentsPage() {
     listPayments(c, { customerId: customerId || undefined, from: range.from || undefined, to: range.to || undefined, page }),
   )
   const columns: Column<PaymentRow>[] = [
-    { key: 'no', header: 'Payment no.', cell: (p) => <span className="font-medium text-slate-900">{p.payment_number}</span> },
+    { key: 'no', header: 'Payment no.', cell: (p) => <span className="font-medium text-stone-900">{p.payment_number}</span> },
     { key: 'date', header: 'Date', sortValue: (p) => p.payment_date, cell: (p) => formatDate(p.payment_date) },
-    { key: 'cust', header: 'Customer', cell: (p) => <Link className="text-cyan-800 hover:underline" to={`/business/${code}/customers/${p.customer_id}`}>{p.customers?.customer_name ?? '—'}</Link> },
-    { key: 'bill', header: 'Against bill', cell: (p) => (p.bills ? <Link className="text-cyan-800 hover:underline" to={`/business/${code}/bills/${p.bill_id}`}>{p.bills.bill_number}</Link> : <span className="text-slate-500">On account</span>) },
+    { key: 'cust', header: 'Customer', cell: (p) => <Link className="text-amber-800 hover:underline" to={`/business/${code}/customers/${p.customer_id}`}>{p.customers?.customer_name ?? '—'}</Link> },
+    { key: 'bill', header: 'Against bill', cell: (p) => (p.bills ? <Link className="text-amber-800 hover:underline" to={`/business/${code}/bills/${p.bill_id}`}>{p.bills.bill_number}</Link> : <span className="text-stone-500">On account</span>) },
     { key: 'mode', header: 'Mode', cell: (p) => p.payment_mode.replace('_', ' ') },
     { key: 'ref', header: 'Reference', cell: (p) => p.reference_number ?? '—' },
     { key: 'amt', header: 'Amount', numeric: true, sortValue: (p) => p.amount, cell: (p) => <CurrencyDisplay value={p.amount} className="font-medium text-emerald-700" /> },
@@ -47,7 +47,7 @@ export function PaymentsPage() {
       />
       <Card>
         <FilterBar>
-          <label className="block text-xs font-medium text-slate-600">
+          <label className="block text-xs font-medium text-stone-600">
             Customer
             <Select className="mt-1 w-56" value={customerId} onChange={(e) => { setCustomerId(e.target.value); setPage(0) }}>
               <option value="">All customers</option>
@@ -93,13 +93,13 @@ export function LedgerPage() {
       header: 'Reference',
       cell: (e) =>
         e.reference_type === 'bill' && e.reference_id ? (
-          <Link className="text-cyan-800 hover:underline" to={`/business/${code}/bills/${e.reference_id}`}>{e.description ?? 'Bill'}</Link>
+          <Link className="text-amber-800 hover:underline" to={`/business/${code}/bills/${e.reference_id}`}>{e.description ?? 'Bill'}</Link>
         ) : (
           e.description ?? '—'
         ),
     },
-    { key: 'debit', header: 'Debit', numeric: true, cell: (e) => (e.debit > 0 ? <CurrencyDisplay value={e.debit} /> : <span className="text-slate-300">—</span>) },
-    { key: 'credit', header: 'Credit', numeric: true, cell: (e) => (e.credit > 0 ? <CurrencyDisplay value={e.credit} className="text-emerald-700" /> : <span className="text-slate-300">—</span>) },
+    { key: 'debit', header: 'Debit', numeric: true, cell: (e) => (e.debit > 0 ? <CurrencyDisplay value={e.debit} /> : <span className="text-stone-300">—</span>) },
+    { key: 'credit', header: 'Credit', numeric: true, cell: (e) => (e.credit > 0 ? <CurrencyDisplay value={e.credit} className="text-emerald-700" /> : <span className="text-stone-300">—</span>) },
     { key: 'bal', header: 'Balance', numeric: true, cell: (e) => <CurrencyDisplay value={e.running_balance} className="font-medium" /> },
   ]
 
@@ -112,7 +112,7 @@ export function LedgerPage() {
       />
       <Card>
         <FilterBar>
-          <label className="block text-xs font-medium text-slate-600">
+          <label className="block text-xs font-medium text-stone-600">
             Customer
             <Select className="mt-1 w-64" value={customerId} onChange={(e) => { setCustomerId(e.target.value); setPage(0) }}>
               <option value="">Select a customer…</option>
@@ -185,7 +185,7 @@ export function ExpensesPage() {
   const summary = useBizQuery(['expenses', 'summary', range.from, range.to], (c) => expenseSummary(c, { from: range.from || undefined, to: range.to || undefined }))
 
   const columns: Column<Expense>[] = [
-    { key: 'no', header: 'Expense no.', cell: (e) => <span className="font-medium text-slate-900">{e.expense_number}</span> },
+    { key: 'no', header: 'Expense no.', cell: (e) => <span className="font-medium text-stone-900">{e.expense_number}</span> },
     { key: 'date', header: 'Date', sortValue: (e) => e.expense_date, cell: (e) => `${formatDate(e.expense_date)}${e.expense_time ? ` ${e.expense_time.slice(0, 5)}` : ''}` },
     { key: 'cat', header: 'Category', cell: (e) => <StatusBadge>{e.category}</StatusBadge> },
     { key: 'desc', header: 'Description', wrap: true, cell: (e) => e.description ?? '—' },
@@ -202,7 +202,7 @@ export function ExpensesPage() {
       </div>
       <Card>
         <FilterBar>
-          <label className="block text-xs font-medium text-slate-600">
+          <label className="block text-xs font-medium text-stone-600">
             Category
             <Select className="mt-1 w-40" value={category} onChange={(e) => { setCategory(e.target.value); setPage(0) }}>
               <option value="">All</option>

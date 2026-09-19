@@ -213,7 +213,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
               </FormField>
 
               <div className="sm:col-span-2">
-                <span className="mb-1 block text-xs font-medium text-slate-600">
+                <span className="mb-1 block text-xs font-medium text-stone-600">
                   Bill number <span className="text-red-600">*</span>
                 </span>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -229,13 +229,13 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
                 {numberMode === 'manual' ? (
                   <Input className="mt-2 max-w-xs" aria-label="Bill number" placeholder="e.g. the number printed on the physical bill" value={number} onChange={(e) => setNumber(e.target.value)} />
                 ) : (
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-stone-500">
                     {mode === 'edit' && existing.data?.bill.bill_number_source === 'generated'
                       ? `Keeping ${number}.`
                       : `A number with prefix “${type === 'ev' ? evPrefix : normalPrefix}” will be issued when you save.`}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-slate-500">Numbers are unique per bill type: Normal 52 and EV 52 can both exist.</p>
+                <p className="mt-1 text-xs text-stone-500">Numbers are unique per bill type: Normal 52 and EV 52 can both exist.</p>
               </div>
 
               <FormField label="Customer" required className="sm:col-span-2">
@@ -308,7 +308,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
             </div>
           </Card>
 
-          <section className="rounded-lg bg-navy-900 p-5 text-slate-200 shadow-card">
+          <section className="rounded-lg bg-navy-900 p-5 text-stone-200 shadow-card">
             <h2 className="text-sm font-semibold text-white">Total preview</h2>
             <dl className="tabular mt-3 space-y-1.5 text-sm">
               <Line label="Taxable value" value={preview.taxable} />
@@ -320,7 +320,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
                 <dd>{formatINR(preview.total)}</dd>
               </div>
             </dl>
-            <p className="mt-3 text-xs text-slate-400">Preview only. The database computes and stores the final amounts when you save.</p>
+            <p className="mt-3 text-xs text-stone-400">Preview only. The database computes and stores the final amounts when you save.</p>
           </section>
 
           <Card>
@@ -338,7 +338,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
 function Line({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex justify-between">
-      <dt className="text-slate-400">{label}</dt>
+      <dt className="text-stone-400">{label}</dt>
       <dd>{formatINR(value)}</dd>
     </div>
   )

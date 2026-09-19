@@ -108,7 +108,7 @@ export function CustomerList() {
   const query = useBizQuery(['customers', 'list', dq, page], (c) => listCustomers(c, { q: dq, page }))
 
   const columns: Column<Customer>[] = [
-    { key: 'name', header: 'Customer', sortValue: (c) => c.customer_name, cell: (c) => <span className="font-medium text-slate-900">{c.customer_name}</span> },
+    { key: 'name', header: 'Customer', sortValue: (c) => c.customer_name, cell: (c) => <span className="font-medium text-stone-900">{c.customer_name}</span> },
     { key: 'company', header: 'Company', cell: (c) => c.company_name ?? '—' },
     { key: 'phone', header: 'Phone', cell: (c) => c.phone ?? '—' },
     { key: 'city', header: 'City', cell: (c) => c.city ?? '—' },
@@ -193,17 +193,17 @@ export function CustomerDetail() {
               ['Phone', c.phone], ['Alternate phone', c.alternate_phone], ['Email', c.email], ['GSTIN', c.gstin],
               ['Billing address', c.billing_address], ['City', c.city], ['State', c.state], ['Pincode', c.pincode], ['Notes', c.notes],
             ].map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-4"><dt className="shrink-0 text-slate-500">{k}</dt><dd className="break-words text-right text-slate-900">{v || '—'}</dd></div>
+              <div key={k} className="flex justify-between gap-4"><dt className="shrink-0 text-stone-500">{k}</dt><dd className="break-words text-right text-stone-900">{v || '—'}</dd></div>
             ))}
           </dl>
         </Card>
         <div className="space-y-6 xl:col-span-2">
           <Card>
-            <CardHeader title="Recent bills" actions={<Link className="text-xs text-cyan-700 hover:underline" to={`${base}/bills`}>All bills</Link>} />
+            <CardHeader title="Recent bills" actions={<Link className="text-xs text-amber-800 hover:underline" to={`${base}/bills`}>All bills</Link>} />
             <DataTable
               dense
               columns={[
-                { key: 'no', header: 'Bill', cell: (b) => <Link className="font-medium text-cyan-800 hover:underline" to={`${base}/bills/${b.id}`}>{b.bill_number}</Link> },
+                { key: 'no', header: 'Bill', cell: (b) => <Link className="font-medium text-amber-800 hover:underline" to={`${base}/bills/${b.id}`}>{b.bill_number}</Link> },
                 { key: 'type', header: 'Type', cell: (b) => <BillTypeBadge type={b.bill_type} /> },
                 { key: 'date', header: 'Date', cell: (b) => formatDate(b.bill_date) },
                 { key: 'total', header: 'Total', numeric: true, cell: (b) => <CurrencyDisplay value={b.grand_total} /> },
@@ -239,7 +239,7 @@ export function CustomerDetail() {
             <DataTable
               dense
               columns={[
-                { key: 'no', header: 'Quotation', cell: (q) => <Link className="font-medium text-cyan-800 hover:underline" to={`${base}/quotations/${q.id}`}>{q.quotation_number}</Link> },
+                { key: 'no', header: 'Quotation', cell: (q) => <Link className="font-medium text-amber-800 hover:underline" to={`${base}/quotations/${q.id}`}>{q.quotation_number}</Link> },
                 { key: 'date', header: 'Date', cell: (q) => formatDate(q.quotation_date) },
                 { key: 'total', header: 'Total', numeric: true, cell: (q) => <CurrencyDisplay value={q.grand_total} /> },
                 { key: 'st', header: 'Status', cell: (q) => <QuotationStatusBadge status={q.status} /> },

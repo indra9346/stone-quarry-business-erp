@@ -8,7 +8,7 @@ import { billState } from '@/types/db'
 /** A4-style sheet. Only this element prints (see `.print-area` in index.css). */
 export function DocumentPage({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('print-area mx-auto w-full max-w-[794px] bg-white p-8 text-[13px] leading-relaxed text-slate-900 shadow-card ring-1 ring-slate-200 print:p-0 print:shadow-none', className)}>
+    <div className={cn('print-area mx-auto w-full max-w-[794px] bg-white p-8 text-[13px] leading-relaxed text-stone-900 shadow-card ring-1 ring-stone-200 print:p-0 print:shadow-none', className)}>
       {children}
     </div>
   )
@@ -18,12 +18,12 @@ export function DocumentPage({ children, className }: { children: ReactNode; cla
 export function DocumentHeader({ title, number, date }: { title: string; number?: string | null; date?: string | null }) {
   const lh = useBusinessLetterhead()
   return (
-    <header className="border-b-2 border-slate-900 pb-3">
+    <header className="border-b-2 border-stone-900 pb-3">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xl font-bold tracking-wide">{lh.name}</p>
-          {lh.address && <p className="mt-0.5 max-w-md text-xs text-slate-600">{lh.address}</p>}
-          <p className="mt-0.5 text-xs text-slate-600">
+          {lh.address && <p className="mt-0.5 max-w-md text-xs text-stone-600">{lh.address}</p>}
+          <p className="mt-0.5 text-xs text-stone-600">
             {[lh.phone && `Phone: ${lh.phone}`, lh.email, lh.gstin && `GSTIN: ${lh.gstin}`].filter(Boolean).join('  ·  ')}
           </p>
         </div>
@@ -43,7 +43,7 @@ export function DocumentStatus({ label, tone = 'red' }: { label: string; tone?: 
     <div
       aria-hidden
       className={cn(
-        'pointer-events-none absolute left-1/2 top-40 -translate-x-1/2 -rotate-12 select-none rounded border-4 px-6 py-2 text-5xl font-black uppercase tracking-widest opacity-15',
+        'pointer-events-none absolute left-1/2 top-40 -transtone-x-1/2 -rotate-12 select-none rounded border-4 px-6 py-2 text-5xl font-black uppercase tracking-widest opacity-15',
         tone === 'red' ? 'border-red-600 text-red-600' : 'border-amber-600 text-amber-600',
       )}
     >
@@ -55,20 +55,20 @@ export function DocumentStatus({ label, tone = 'red' }: { label: string; tone?: 
 function Kv({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex gap-2 text-xs">
-      <span className="w-24 shrink-0 text-slate-500">{label}</span>
+      <span className="w-24 shrink-0 text-stone-500">{label}</span>
       <span className="font-medium">{children ?? '—'}</span>
     </div>
   )
 }
 
-const th = 'border border-slate-400 bg-slate-100 px-2 py-1.5 text-left text-[11px] font-semibold uppercase'
-const td = 'border border-slate-300 px-2 py-1.5 align-top'
+const th = 'border border-stone-400 bg-stone-100 px-2 py-1.5 text-left text-[11px] font-semibold uppercase'
+const td = 'border border-stone-300 px-2 py-1.5 align-top'
 
 function Signatures({ left, right }: { left: string; right: string }) {
   return (
     <div className="mt-14 grid grid-cols-2 gap-10 text-xs">
-      <div className="border-t border-slate-500 pt-1.5">{left}</div>
-      <div className="border-t border-slate-500 pt-1.5 text-right">{right}</div>
+      <div className="border-t border-stone-500 pt-1.5">{left}</div>
+      <div className="border-t border-stone-500 pt-1.5 text-right">{right}</div>
     </div>
   )
 }
@@ -155,7 +155,7 @@ export function BillDocument({
         </table>
       </div>
 
-      {bill.notes && <p className="mt-4 text-xs text-slate-600">Notes: {bill.notes}</p>}
+      {bill.notes && <p className="mt-4 text-xs text-stone-600">Notes: {bill.notes}</p>}
       <Signatures left="Receiver signature" right={`For ${lh.name}`} />
     </DocumentPage>
   )
@@ -163,7 +163,7 @@ export function BillDocument({
 
 function TotalRow({ label, value, strong }: { label: string; value: number | null; strong?: boolean }) {
   return (
-    <tr className={cn(strong && 'border-t-2 border-slate-900 text-sm font-bold')}>
+    <tr className={cn(strong && 'border-t-2 border-stone-900 text-sm font-bold')}>
       <td className="py-1 pr-3">{label}</td>
       <td className="tabular py-1 text-right">{formatINR(value)}</td>
     </tr>
@@ -231,8 +231,8 @@ export function QuotationDocument({
           </tbody>
         </table>
       </div>
-      {quotation.terms && <p className="mt-4 whitespace-pre-line text-xs text-slate-600">Terms: {quotation.terms}</p>}
-      {quotation.notes && <p className="mt-2 whitespace-pre-line text-xs text-slate-600">Notes: {quotation.notes}</p>}
+      {quotation.terms && <p className="mt-4 whitespace-pre-line text-xs text-stone-600">Terms: {quotation.terms}</p>}
+      {quotation.notes && <p className="mt-2 whitespace-pre-line text-xs text-stone-600">Notes: {quotation.notes}</p>}
       <Signatures left="Customer acceptance" right={`For ${lh.name}`} />
     </DocumentPage>
   )
@@ -284,7 +284,7 @@ export function MeasurementDocument({
           </tbody>
         </table>
       </div>
-      {sheet.notes && <p className="mt-4 text-xs text-slate-600">Notes: {sheet.notes}</p>}
+      {sheet.notes && <p className="mt-4 text-xs text-stone-600">Notes: {sheet.notes}</p>}
       <Signatures left="Receiver signature" right={`For ${lh.name}`} />
     </DocumentPage>
   )

@@ -10,8 +10,8 @@
   }
 
   body {
-    @apply bg-slate-100 text-slate-900 antialiased;
-    font-feature-settings: 'cv11' 1, 'ss01' 1;
+    @apply bg-stone-100 text-stone-900 antialiased;
+
   }
 
   /* Numbers line up in tables and KPIs. */
@@ -20,11 +20,11 @@
   }
 
   ::selection {
-    @apply bg-amber-500/30 text-slate-900;
+    @apply bg-amber-500/30 text-stone-900;
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-cyan-500 ring-offset-2 ring-offset-white;
+    @apply outline-none ring-2 ring-amber-500 ring-offset-2 ring-offset-white;
   }
 }
 

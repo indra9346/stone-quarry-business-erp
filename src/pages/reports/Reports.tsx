@@ -23,8 +23,8 @@ const REPORTS: { id: ReportId; label: string }[] = [
   { id: 'profit', label: 'Revenue / profit' },
 ]
 
-const th = 'border-b border-slate-300 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500'
-const td = 'border-b border-slate-100 px-3 py-2'
+const th = 'border-b border-stone-300 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-500'
+const td = 'border-b border-stone-100 px-3 py-2'
 
 export default function Reports() {
   const { profile } = useBusinessContext()
@@ -49,7 +49,7 @@ export default function Reports() {
       />
       <Card className="no-print mb-6">
         <div className="flex flex-wrap items-end gap-4 p-5">
-          <label className="block text-xs font-medium text-slate-600">
+          <label className="block text-xs font-medium text-stone-600">
             Report
             <Select className="mt-1 w-64" value={report} onChange={(e) => setReport(e.target.value as ReportId)}>
               {REPORTS.map((r) => (
@@ -64,10 +64,10 @@ export default function Reports() {
       </Card>
 
       <DocumentPage>
-        <header className="border-b-2 border-slate-900 pb-3">
+        <header className="border-b-2 border-stone-900 pb-3">
           <p className="text-lg font-bold">{lh.name || profile.name}</p>
           <p className="text-sm font-semibold uppercase tracking-wider">{title}</p>
-          <p className="mt-1 text-xs text-slate-600">
+          <p className="mt-1 text-xs text-stone-600">
             {usesRange ? `Period: ${formatDate(range.from)} to ${formatDate(range.to)}` : 'As of now'} · Business: {profile.name} · Generated: {generated}
           </p>
         </header>
@@ -111,7 +111,7 @@ function DailySales({ from, to, mode }: { from: string; to: string; mode: 'day' 
           </tbody>
         </table>
       )}
-      <p className="mt-3 text-xs text-slate-500">Counts every non-cancelled bill (draft or posted) by bill date.</p>
+      <p className="mt-3 text-xs text-stone-500">Counts every non-cancelled bill (draft or posted) by bill date.</p>
     </State>
   )
 }
@@ -162,7 +162,7 @@ function OutstandingReport() {
           </tbody>
         </table>
       )}
-      <p className="mt-3 text-xs text-slate-500">Balance due on posted, non-cancelled bills. Opening balances and on-account payments are on the customer ledger.</p>
+      <p className="mt-3 text-xs text-stone-500">Balance due on posted, non-cancelled bills. Opening balances and on-account payments are on the customer ledger.</p>
     </State>
   )
 }
@@ -211,7 +211,7 @@ function TripReport({ from, to }: { from: string; to: string }) {
             <thead><tr><th className={th}>Status</th><th className={`${th} text-right`}>Trips</th></tr></thead>
             <tbody>{[...counts.entries()].map(([s, n]) => <tr key={s}><td className={`${td} capitalize`}>{s.replace('_', ' ')}</td><td className={`${td} tabular text-right`}>{n}</td></tr>)}</tbody>
           </table>
-          <p className="mt-3 text-xs text-slate-500">Showing the {q.data.rows.length} most recent of {q.data.total} trips in the period.</p>
+          <p className="mt-3 text-xs text-stone-500">Showing the {q.data.rows.length} most recent of {q.data.total} trips in the period.</p>
         </>
       )}
     </State>
@@ -220,13 +220,13 @@ function TripReport({ from, to }: { from: string; to: string }) {
 
 function Insufficient() {
   return (
-    <div className="rounded-md bg-slate-50 p-5 ring-1 ring-slate-200">
-      <p className="text-sm font-semibold text-slate-900">Insufficient data</p>
-      <p className="mt-1 text-sm text-slate-600">
+    <div className="rounded-md bg-stone-50 p-5 ring-1 ring-stone-200">
+      <p className="text-sm font-semibold text-stone-900">Insufficient data</p>
+      <p className="mt-1 text-sm text-stone-600">
         Profit cannot be calculated accurately: stock movements carry no cost, so the cost of goods sold is unknown. Revenue is available under Daily / Monthly sales and
         expenses under Expenses by category; subtracting them would not be a true profit, so no figure is shown.
       </p>
-      <p className="mt-3 text-xs text-slate-500">Revenue this period and expenses are shown separately on their own reports.</p>
+      <p className="mt-3 text-xs text-stone-500">Revenue this period and expenses are shown separately on their own reports.</p>
     </div>
   )
 }

@@ -15,7 +15,7 @@ export default function ProtectedBusinessRoute() {
 
   if (accessState === 'loading') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100" role="status" aria-label="Loading session">
+      <div className="flex min-h-screen items-center justify-center bg-stone-100" role="status" aria-label="Loading session">
         <Spinner className="h-7 w-7" />
       </div>
     )

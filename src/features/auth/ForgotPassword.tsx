@@ -25,7 +25,7 @@ export default function ForgotPassword() {
   return (
     <AuthShell title="Reset your password" subtitle="We will email a secure reset link.">
       {!configured ? (
-        <p className="text-sm text-slate-600">This business portal is not configured yet.</p>
+        <p className="text-sm text-stone-600">This business portal is not configured yet.</p>
       ) : sent ? (
         <p className="rounded-md bg-emerald-50 px-3 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">
           If an account exists for {email}, a reset link is on its way. Check your inbox.
@@ -46,7 +46,7 @@ export default function ForgotPassword() {
         </form>
       )}
       <div className="mt-4 text-center">
-        <Link to={`/business/${code}`} className="text-sm text-cyan-700 hover:underline">
+        <Link to={`/business/${code}`} className="text-sm text-amber-800 hover:underline">
           Back to sign in
         </Link>
       </div>

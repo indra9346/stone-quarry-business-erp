@@ -33,7 +33,7 @@ export function MeasurementList() {
 
   type Row = NonNullable<typeof query.data>['rows'][number]
   const columns: Column<Row>[] = [
-    { key: 'no', header: 'Sheet no.', cell: (r) => <span className="font-medium text-slate-900">{r.sheet_number ?? '—'}</span> },
+    { key: 'no', header: 'Sheet no.', cell: (r) => <span className="font-medium text-stone-900">{r.sheet_number ?? '—'}</span> },
     { key: 'date', header: 'Date', sortValue: (r) => r.sheet_date, cell: (r) => formatDate(r.sheet_date) },
     { key: 'to', header: 'To (as written)', cell: (r) => r.party_name_text ?? '—' },
     { key: 'rows', header: 'Rows', numeric: true, sortValue: (r) => r.row_count, cell: (r) => r.row_count },
@@ -207,19 +207,19 @@ export function MeasurementForm({ mode }: { mode: 'create' | 'edit' }) {
         <Card>
           <CardHeader title="Rows" description="Type each value exactly as written. Nothing is calculated or converted." />
           <div className="p-5">
-            <div className="hidden grid-cols-[3rem_minmax(0,3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_2rem] gap-2 px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+            <div className="hidden grid-cols-[3rem_minmax(0,3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_2rem] gap-2 px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 md:grid">
               <span>Row</span><span>Measurement</span><span>PCS</span><span>Quantity</span><span>Rate</span><span>Amount</span><span />
             </div>
             <div className="space-y-3 md:space-y-2">
               {rows.map((r, i) => (
-                <div key={r.key} className="grid grid-cols-2 gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-[3rem_minmax(0,3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_2rem] md:items-center md:bg-transparent md:p-0">
-                  <span className="tabular text-sm text-slate-500">{i + 1}</span>
+                <div key={r.key} className="grid grid-cols-2 gap-2 rounded-md bg-stone-50 p-3 md:grid-cols-[3rem_minmax(0,3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_2rem] md:items-center md:bg-transparent md:p-0">
+                  <span className="tabular text-sm text-stone-500">{i + 1}</span>
                   <Input className="col-span-2 md:col-span-1" aria-label={`Row ${i + 1} measurement`} placeholder="e.g. 52 × 18 × 9.5&quot;" value={r.measurement} onChange={(e) => set(r.key, { measurement: e.target.value })} />
                   <Input aria-label={`Row ${i + 1} PCS`} placeholder="PCS" value={r.pcs} onChange={(e) => set(r.key, { pcs: e.target.value })} />
                   <Input inputMode="decimal" aria-label={`Row ${i + 1} quantity`} placeholder="Qty" value={r.quantity} onChange={(e) => set(r.key, { quantity: e.target.value })} />
                   <Input inputMode="decimal" aria-label={`Row ${i + 1} rate`} placeholder="Rate" value={r.rate} onChange={(e) => set(r.key, { rate: e.target.value })} />
                   <Input inputMode="decimal" aria-label={`Row ${i + 1} amount`} placeholder="Amount" value={r.amount} onChange={(e) => set(r.key, { amount: e.target.value })} />
-                  <button type="button" className="justify-self-end rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40" aria-label={`Remove row ${i + 1}`} disabled={rows.length <= 1} onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))}>
+                  <button type="button" className="justify-self-end rounded-md p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40" aria-label={`Remove row ${i + 1}`} disabled={rows.length <= 1} onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))}>
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -238,12 +238,12 @@ export function MeasurementForm({ mode }: { mode: 'create' | 'edit' }) {
               <FormField label="Notes">{(p) => <Textarea {...p} value={notes} onChange={(e) => setNotes(e.target.value)} />}</FormField>
             </div>
           </Card>
-          <section className="rounded-lg bg-navy-900 p-5 text-slate-200 shadow-card">
+          <section className="rounded-lg bg-navy-900 p-5 text-stone-200 shadow-card">
             <h2 className="text-sm font-semibold text-white">Arithmetic check</h2>
-            <p className="mt-1 text-xs text-slate-400">A convenience only — it never changes what is stored.</p>
+            <p className="mt-1 text-xs text-stone-400">A convenience only — it never changes what is stored.</p>
             <dl className="tabular mt-3 space-y-1.5 text-sm">
-              <div className="flex justify-between"><dt className="text-slate-400">Sum of row amounts</dt><dd>{check.has ? formatINR(check.sum) : '—'}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-400">Total as written</dt><dd>{formatINR(parseOptionalNumber(statedTotal))}</dd></div>
+              <div className="flex justify-between"><dt className="text-stone-400">Sum of row amounts</dt><dd>{check.has ? formatINR(check.sum) : '—'}</dd></div>
+              <div className="flex justify-between"><dt className="text-stone-400">Total as written</dt><dd>{formatINR(parseOptionalNumber(statedTotal))}</dd></div>
               <div className="flex justify-between border-t border-white/10 pt-2 font-semibold text-amber-400"><dt>Difference</dt><dd>{check.diff === null ? '—' : formatINR(check.diff)}</dd></div>
             </dl>
           </section>
@@ -280,7 +280,7 @@ export function MeasurementDetail() {
         }
       />
       {verification && (
-        <div className="no-print mb-4 rounded-md bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
+        <div className="no-print mb-4 rounded-md bg-stone-50 px-4 py-3 text-sm text-stone-700 ring-1 ring-stone-200">
           <span className="font-medium">Arithmetic check (information only):</span> row amounts add up to {formatINR(verification.rows_amount_sum)}; total as written{' '}
           {formatINR(verification.stated_total)}
           {verification.difference !== null && (verification.difference === 0 ? ' — they match.' : ` — difference ${formatINR(verification.difference)}.`)}

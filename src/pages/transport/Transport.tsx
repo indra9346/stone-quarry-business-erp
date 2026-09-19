@@ -26,7 +26,7 @@ export function VehiclesPage() {
   const [editing, setEditing] = useState<Vehicle | 'new' | null>(null)
 
   const columns: Column<Vehicle>[] = [
-    { key: 'no', header: 'Vehicle no.', sortValue: (v) => v.registration_number, cell: (v) => <span className="font-medium text-slate-900">{v.registration_number}</span> },
+    { key: 'no', header: 'Vehicle no.', sortValue: (v) => v.registration_number, cell: (v) => <span className="font-medium text-stone-900">{v.registration_number}</span> },
     { key: 'type', header: 'Type', cell: (v) => [v.vehicle_type, v.make_model].filter(Boolean).join(' · ') || '—' },
     { key: 'driver', header: 'Assigned driver', cell: (v) => drivers.data?.find((d) => d.id === v.default_driver_id)?.driver_name ?? '—' },
     { key: 'cap', header: 'Capacity', cell: (v) => v.capacity ?? '—' },
@@ -83,7 +83,7 @@ export function DriversPage() {
   const query = useBizQuery(['drivers', 'list'], listDrivers)
   const [editing, setEditing] = useState<Driver | 'new' | null>(null)
   const columns: Column<Driver>[] = [
-    { key: 'name', header: 'Driver', sortValue: (d) => d.driver_name, cell: (d) => <span className="font-medium text-slate-900">{d.driver_name}</span> },
+    { key: 'name', header: 'Driver', sortValue: (d) => d.driver_name, cell: (d) => <span className="font-medium text-stone-900">{d.driver_name}</span> },
     { key: 'phone', header: 'Phone', cell: (d) => d.phone ?? '—' },
     { key: 'lic', header: 'Licence no.', cell: (d) => d.license_number ?? '—' },
     { key: 'exp', header: 'Licence expiry', cell: (d) => formatDate(d.license_expiry) },
@@ -143,7 +143,7 @@ export function TripsPage() {
     listTrips(c, { status: status || undefined, vehicleId: vehicleId || undefined, from: range.from || undefined, to: range.to || undefined, page }),
   )
   const columns: Column<TripRow>[] = [
-    { key: 'no', header: 'Trip no.', cell: (t) => <span className="font-medium text-slate-900">{t.trip_number}</span> },
+    { key: 'no', header: 'Trip no.', cell: (t) => <span className="font-medium text-stone-900">{t.trip_number}</span> },
     { key: 'date', header: 'Date', sortValue: (t) => t.trip_date, cell: (t) => formatDate(t.trip_date) },
     { key: 'veh', header: 'Vehicle', cell: (t) => t.vehicles?.registration_number ?? '—' },
     { key: 'drv', header: 'Driver', cell: (t) => t.drivers?.driver_name ?? '—' },
@@ -156,12 +156,12 @@ export function TripsPage() {
       <PageHeader title="Trips" description="Loads and deliveries." actions={<Button variant="accent" onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> New trip</Button>} />
       <Card>
         <FilterBar>
-          <label className="block text-xs font-medium text-slate-600">Status
+          <label className="block text-xs font-medium text-stone-600">Status
             <Select className="mt-1 w-40" value={status} onChange={(e) => { setStatus(e.target.value as TripStatus | ''); setPage(0) }}>
               <option value="">All</option><option value="planned">Planned</option><option value="loaded">Loaded</option><option value="in_transit">In transit</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option>
             </Select>
           </label>
-          <label className="block text-xs font-medium text-slate-600">Vehicle
+          <label className="block text-xs font-medium text-stone-600">Vehicle
             <Select className="mt-1 w-44" value={vehicleId} onChange={(e) => { setVehicleId(e.target.value); setPage(0) }}>
               <option value="">All</option>{vehicles.data?.map((v) => <option key={v.id} value={v.id}>{v.registration_number}</option>)}
             </Select>

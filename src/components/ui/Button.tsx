@@ -8,8 +8,8 @@ type Size = 'sm' | 'md'
 const variants: Record<Variant, string> = {
   primary: 'bg-navy-800 text-white hover:bg-navy-700 shadow-sm',
   accent: 'bg-amber-500 text-navy-950 hover:bg-amber-400 shadow-sm font-semibold',
-  secondary: 'bg-white text-slate-700 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 shadow-sm',
-  ghost: 'text-slate-600 hover:bg-slate-200/60',
+  secondary: 'bg-white text-stone-700 ring-1 ring-inset ring-stone-300 hover:bg-stone-50 shadow-sm',
+  ghost: 'text-stone-600 hover:bg-stone-200/60',
   danger: 'bg-red-600 text-white hover:bg-red-500 shadow-sm',
 }
 const sizes: Record<Size, string> = {

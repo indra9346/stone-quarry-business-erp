@@ -28,7 +28,7 @@ export default function ResetPassword() {
   if (!session) {
     return (
       <AuthShell title="Reset link invalid" subtitle="The link is missing, expired or already used.">
-        <Link to={`/business/${code}/forgot-password`} className="text-sm text-cyan-700 hover:underline">
+        <Link to={`/business/${code}/forgot-password`} className="text-sm text-amber-800 hover:underline">
           Request a new link
         </Link>
       </AuthShell>

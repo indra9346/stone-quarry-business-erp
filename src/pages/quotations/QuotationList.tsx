@@ -28,7 +28,7 @@ export default function QuotationList() {
   )
 
   const columns: Column<QuotationRow>[] = [
-    { key: 'no', header: 'Quotation no.', sortValue: (r) => r.quotation_number, cell: (r) => <span className="font-medium text-slate-900">{r.quotation_number}</span> },
+    { key: 'no', header: 'Quotation no.', sortValue: (r) => r.quotation_number, cell: (r) => <span className="font-medium text-stone-900">{r.quotation_number}</span> },
     { key: 'customer', header: 'Customer', sortValue: (r) => r.customers?.customer_name ?? null, cell: (r) => r.customers?.customer_name ?? '—' },
     { key: 'date', header: 'Date', sortValue: (r) => r.quotation_date, cell: (r) => formatDate(r.quotation_date) },
     { key: 'valid', header: 'Valid until', cell: (r) => formatDate(r.valid_until) },
@@ -52,7 +52,7 @@ export default function QuotationList() {
           <div className="w-full sm:w-64">
             <SearchBar value={q} onChange={(v) => { setQ(v); setPage(0) }} placeholder="Search by quotation number" />
           </div>
-          <label className="block text-xs font-medium text-slate-600">
+          <label className="block text-xs font-medium text-stone-600">
             Status
             <Select className="mt-1 w-36" value={status} onChange={(e) => { setStatus(e.target.value as QuotationStatus | ''); setPage(0) }}>
               <option value="">All</option>

@@ -46,14 +46,14 @@ export default function BusinessLayout() {
   }
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-navy-900 text-slate-300">
+    <div className="flex h-full flex-col bg-navy-900 text-stone-300">
       <div className="flex items-center gap-3 border-b border-white/5 px-4 py-4">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-navy-700 text-xs font-bold tracking-wide text-amber-400 ring-1 ring-white/10">
           {initials(profile.name)}
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-white">{profile.name}</p>
-          <p className="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <p className="flex items-center gap-1.5 text-[11px] text-stone-400">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden /> Live database
           </p>
         </div>
@@ -62,7 +62,7 @@ export default function BusinessLayout() {
       <nav className="scroll-thin flex-1 space-y-5 overflow-y-auto px-3 py-4" aria-label="Main">
         {navFor(isAdmin).map((group) => (
           <div key={group.label}>
-            <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">{group.label}</p>
+            <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-stone-500">{group.label}</p>
             <ul className="space-y-0.5">
               {group.items.map(({ to, label, icon: Icon }) => (
                 <li key={to}>
@@ -73,7 +73,7 @@ export default function BusinessLayout() {
                         'group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors duration-150',
                         isActive
                           ? 'bg-white/10 font-medium text-white shadow-[inset_2px_0_0_0_#e8a227]'
-                          : 'text-slate-400 hover:bg-white/5 hover:text-slate-100',
+                          : 'text-stone-400 hover:bg-white/5 hover:text-stone-100',
                       )
                     }
                   >
@@ -102,7 +102,7 @@ export default function BusinessLayout() {
   )
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-stone-100">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2">
         Skip to content
       </a>
@@ -119,9 +119,9 @@ export default function BusinessLayout() {
       )}
 
       <div className="lg:pl-64">
-        <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-2.5 backdrop-blur sm:px-6">
+        <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-stone-200 bg-white/90 px-4 py-2.5 backdrop-blur sm:px-6">
           <button
-            className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+            className="rounded-md p-2 text-stone-600 hover:bg-stone-100 lg:hidden"
             onClick={() => setDrawer((d) => !d)}
             aria-label={drawer ? 'Close menu' : 'Open menu'}
           >
@@ -129,24 +129,24 @@ export default function BusinessLayout() {
           </button>
 
           <div className="hidden min-w-0 items-center gap-1.5 text-sm md:flex">
-            <span className="font-medium text-slate-900">{profile.name}</span>
-            <span className="text-slate-300">/</span>
-            <span className="truncate text-slate-500">{sectionLabel}</span>
+            <span className="font-medium text-stone-900">{profile.name}</span>
+            <span className="text-stone-300">/</span>
+            <span className="truncate text-stone-500">{sectionLabel}</span>
           </div>
 
           <form onSubmit={onSearch} className="relative ml-auto w-full max-w-xs" role="search">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -transtone-y-1/2 text-stone-400" aria-hidden />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search bills by number…"
               aria-label="Search bills by number"
-              className="h-9 w-full rounded-md border-0 bg-slate-100 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-cyan-500"
+              className="h-9 w-full rounded-md border-0 bg-stone-100 pl-9 pr-3 text-sm text-stone-900 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-500"
             />
           </form>
 
           <Dropdown.Root>
-            <Dropdown.Trigger className="relative rounded-md p-2 text-slate-600 hover:bg-slate-100" aria-label="Notifications">
+            <Dropdown.Trigger className="relative rounded-md p-2 text-stone-600 hover:bg-stone-100" aria-label="Notifications">
               <Bell className="h-5 w-5" />
               {alerts.items.length > 0 && (
                 <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-navy-950">
@@ -155,16 +155,16 @@ export default function BusinessLayout() {
               )}
             </Dropdown.Trigger>
             <Dropdown.Portal>
-              <Dropdown.Content align="end" sideOffset={8} className="z-50 w-72 rounded-lg bg-white p-1.5 shadow-lift ring-1 ring-slate-200">
-                <p className="px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Alerts</p>
+              <Dropdown.Content align="end" sideOffset={8} className="z-50 w-72 rounded-lg bg-white p-1.5 shadow-lift ring-1 ring-stone-200">
+                <p className="px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-stone-500">Alerts</p>
                 {alerts.items.length === 0 ? (
-                  <p className="px-2.5 py-3 text-sm text-slate-500">Nothing needs attention.</p>
+                  <p className="px-2.5 py-3 text-sm text-stone-500">Nothing needs attention.</p>
                 ) : (
                   alerts.items.map((a) => (
                     <Dropdown.Item
                       key={a.id}
                       onSelect={() => navigate(`/business/${code}/${a.to}`)}
-                      className="cursor-pointer rounded-md px-2.5 py-2 text-sm text-slate-700 outline-none data-[highlighted]:bg-slate-100"
+                      className="cursor-pointer rounded-md px-2.5 py-2 text-sm text-stone-700 outline-none data-[highlighted]:bg-stone-100"
                     >
                       {a.message}
                     </Dropdown.Item>
@@ -175,20 +175,20 @@ export default function BusinessLayout() {
           </Dropdown.Root>
 
           <Dropdown.Root>
-            <Dropdown.Trigger className="flex items-center gap-2 rounded-md py-1 pl-1 pr-2 hover:bg-slate-100" aria-label="User menu">
+            <Dropdown.Trigger className="flex items-center gap-2 rounded-md py-1 pl-1 pr-2 hover:bg-stone-100" aria-label="User menu">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-800 text-xs font-semibold text-white">
                 {initials(fullName ?? email ?? '?')}
               </span>
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+              <ChevronDown className="h-3.5 w-3.5 text-stone-400" />
             </Dropdown.Trigger>
             <Dropdown.Portal>
-              <Dropdown.Content align="end" sideOffset={8} className="z-50 w-60 rounded-lg bg-white p-1.5 shadow-lift ring-1 ring-slate-200">
-                <div className="border-b border-slate-100 px-2.5 py-2">
-                  <p className="truncate text-sm font-medium text-slate-900">{fullName ?? email}</p>
-                  <p className="truncate text-xs text-slate-500">{email}</p>
+              <Dropdown.Content align="end" sideOffset={8} className="z-50 w-60 rounded-lg bg-white p-1.5 shadow-lift ring-1 ring-stone-200">
+                <div className="border-b border-stone-100 px-2.5 py-2">
+                  <p className="truncate text-sm font-medium text-stone-900">{fullName ?? email}</p>
+                  <p className="truncate text-xs text-stone-500">{email}</p>
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-amber-600">{role}</p>
                 </div>
-                <Dropdown.Item onSelect={() => navigate('/')} className="mt-1 flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-700 outline-none data-[highlighted]:bg-slate-100">
+                <Dropdown.Item onSelect={() => navigate('/')} className="mt-1 flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm text-stone-700 outline-none data-[highlighted]:bg-stone-100">
                   <Repeat className="h-4 w-4" /> Switch business
                 </Dropdown.Item>
                 <Dropdown.Item onSelect={() => void handleLogout()} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm text-red-600 outline-none data-[highlighted]:bg-red-50">
