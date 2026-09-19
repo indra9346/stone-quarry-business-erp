@@ -7,7 +7,7 @@
 -- master, configurable units.
 -- ============================================================================
 
-create extension if not exists "pgcrypto";
+-- gen_random_uuid() is built into PostgreSQL 13+, so no extension is needed.
 
 -- ---------------------------------------------------------------------------
 -- updated_at helper, reused by every table below.
@@ -74,48 +74,40 @@ as $$
   );
 $$;
 
-revoke execute on function current_role_is(text) from public;
-revoke execute on function is_active_staff() from public;
+revoke execute on function current_role_is(text) from public, anon;
+revoke execute on function is_active_staff() from public, anon;
 grant execute on function current_role_is(text) to authenticated;
 grant execute on function is_active_staff() to authenticated;
 
 -- ---------------------------------------------------------------------------
--- units — configurable measurement units (Rule #15). Do not hardcode a
--- single unit; a material declares which unit(s) it is measured in.
+-- units — configurable measurement units (Rule #15). Deliberately EMPTY:
+-- the business has not confirmed which units it uses (the source documents
+-- show a quantity with no unit, and a "PCS" column whose meaning is
+-- unconfirmed), so no unit is invented here. An admin defines the units the
+-- business actually uses. Nothing in the schema requires a unit on a
+-- document line (bill_items.unit is nullable).
 -- ---------------------------------------------------------------------------
 create table if not exists units (
-  code text primary key,          -- 'piece' | 'sqft' | 'cuft' | 'ton' | 'kg' | 'load' | 'meter' | 'sqm' | 'other'
+  code text primary key,
   label text not null,
-  measurement_kind text not null check (measurement_kind in ('count', 'area', 'volume', 'weight', 'other'))
+  measurement_kind text not null default 'other'
+    check (measurement_kind in ('count', 'area', 'volume', 'weight', 'other'))
 );
-insert into units (code, label, measurement_kind) values
-  ('piece', 'Piece', 'count'),
-  ('sqft', 'Sq. Ft.', 'area'),
-  ('cuft', 'Cu. Ft.', 'volume'),
-  ('ton', 'Ton', 'weight'),
-  ('kg', 'Kilogram', 'weight'),
-  ('load', 'Load', 'count'),
-  ('meter', 'Meter', 'other'),
-  ('sqm', 'Sq. Meter', 'area')
-on conflict (code) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- materials — the "product" master (stone types: blocks, cutting stone,
--- raw material, temple stone, etc). Dimension-based billing (spec #16) is
--- supported via `is_dimension_based`: when true, quantity is computed from
--- length/breadth/height at the line-item level rather than entered directly.
+-- raw material, temple stone, etc). No dimension->quantity formula is
+-- encoded anywhere: the business has not confirmed one, so quantities are
+-- always entered/preserved as written on the source document.
 -- ---------------------------------------------------------------------------
 create table if not exists materials (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   category text not null check (category in ('block', 'cutting_stone', 'raw_material', 'finished', 'other')),
   hsn_code text,
-  default_unit text not null references units (code),
-  is_dimension_based boolean not null default false,
-  -- for dimension-based materials: 'area' (L*B) or 'volume' (L*B*H); null otherwise
-  dimension_calculation text check (dimension_calculation in ('area', 'volume')),
-  default_rate numeric(14, 2),
-  low_stock_threshold numeric(14, 3),
+  default_unit text references units (code),
+  default_rate numeric(14, 2) check (default_rate is null or default_rate >= 0),
+  low_stock_threshold numeric(14, 3) check (low_stock_threshold is null or low_stock_threshold >= 0),
   status text not null default 'active' check (status in ('active', 'inactive')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -140,11 +132,6 @@ create table if not exists customers (
   state text,
   pincode text,
   gstin text,
-  -- Payment routing note (see BUSINESS_RULES.md "payments/mobile number"):
-  -- a customer's preferred payment mobile/UPI handle is informational only.
-  -- The RECEIVING account is always this business's own configured UPI/
-  -- bank details in `settings`, never inferred from a customer record.
-  preferred_payment_mobile text,
   notes text,
   status text not null default 'active' check (status in ('active', 'inactive')),
   created_by uuid references staff_profiles (user_id),
@@ -155,3 +142,19 @@ create trigger trg_customers_updated_at before update on customers
   for each row execute function set_updated_at();
 create index if not exists idx_customers_name on customers using gin (to_tsvector('simple', customer_name));
 create index if not exists idx_customers_phone on customers (phone);
+
+-- ---------------------------------------------------------------------------
+-- stamp_created_by() — forces created_by to the calling user on INSERT so a
+-- client can never record a row as created by someone else. Attached (in the
+-- table's own migration) to every table that has a created_by column.
+-- ---------------------------------------------------------------------------
+create or replace function stamp_created_by()
+returns trigger language plpgsql as $$
+begin
+  new.created_by := auth.uid();
+  return new;
+end;
+$$;
+
+create trigger trg_customers_stamp_created_by before insert on customers
+  for each row execute function stamp_created_by();

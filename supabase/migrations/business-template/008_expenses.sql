@@ -27,3 +27,8 @@ create trigger trg_expenses_updated_at before update on expenses
   for each row execute function set_updated_at();
 create index if not exists idx_expenses_date on expenses (expense_date);
 create index if not exists idx_expenses_category on expenses (category);
+create trigger trg_expenses_stamp_created_by before insert on expenses
+  for each row execute function stamp_created_by();
+
+-- An expense is money the BUSINESS spends. It is not a payment to, or from,
+-- any customer, and nothing links it to a person by phone number.

@@ -61,3 +61,12 @@ create trigger trg_trips_updated_at before update on trips
 create index if not exists idx_trips_vehicle on trips (vehicle_id);
 create index if not exists idx_trips_driver on trips (driver_id);
 create index if not exists idx_trips_status on trips (status);
+create trigger trg_trips_stamp_created_by before insert on trips
+  for each row execute function stamp_created_by();
+
+-- Real foreign keys for the vehicle/trip references on bills (declared as
+-- plain uuids in 005_billing.sql, before these tables existed).
+alter table bills add constraint bills_vehicle_fk foreign key (vehicle_id) references vehicles (id);
+alter table bills add constraint bills_trip_fk foreign key (trip_id) references trips (id);
+create index if not exists idx_bills_vehicle on bills (vehicle_id);
+create index if not exists idx_bills_trip on bills (trip_id);

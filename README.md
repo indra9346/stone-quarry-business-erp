@@ -24,18 +24,18 @@ Documentation:
 
 ## Status
 
-Phase 1–3 scaffold plus a verification/correction pass: project structure,
-the Main Branch gateway UI, per-business auth/routing wiring, and complete
-database migrations for the central registry + business-template schema —
-re-reviewed, with three real RLS/function bugs found and fixed (see
-`docs/SECURITY.md`). Operational modules (bills, quotations, ledger, stock,
-vehicles, reports UI) are not built yet — see `docs/DEVELOPMENT_PLAN.md`.
-Nothing here is connected to a live Supabase project yet; the app's code
-assumes the gateway will render and each business portal will say "not
-configured" until you wire up real credentials (deliberately — see below).
-`npm install`, `npm run typecheck`, `npm run lint` and `npm run build` all
-succeed; the SQL migrations have still never been run against a live
-database.
+Phase 1–3 plus a database implementation pass: project structure, the Main
+Branch gateway UI, per-business auth/routing wiring, and the complete
+database migrations for the central registry + business-template schema,
+verified on real PostgreSQL with `npm run test:db` (schema, bill/tax
+arithmetic, NULL handling, ledger, stock, measurement sheets, RLS, grants).
+Operational module UIs (bills, quotations, ledger, stock, vehicles, reports)
+are not built yet — see `docs/DEVELOPMENT_PLAN.md`.
+
+**No Supabase project has been created yet**, so nothing is connected to a
+hosted database; each business portal says "not configured" until you add
+credentials (deliberately — see below). `npm install`, `npm run typecheck`,
+`npm run lint`, `npm run build` and `npm run test:db` all succeed.
 
 ### Known `npm audit` findings
 

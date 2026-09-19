@@ -8,8 +8,8 @@ the actual migration files (not just described in prose).
 
 | Environment | Migrations applied | Contains |
 |---|---|---|
-| **Central** | `supabase/migrations/central/001_central_registry.sql` | `central_businesses`, `central_users`, `central_user_business_access`, `central_audit_logs` — registry + cross-business access ONLY |
-| **KMG** (own Supabase project) | `supabase/migrations/business-template/*.sql` (all 10 files) | Every KMG operational table, listed below |
+| **Central** | `supabase/migrations/central/001_central_registry.sql`, `002_grants.sql` | `central_businesses`, `central_users`, `central_user_business_access`, `central_audit_logs` — registry + cross-business access ONLY |
+| **KMG** (own Supabase project) | `supabase/migrations/business-template/*.sql` (all 12 files) | Every KMG operational table, listed below |
 | **Murudeshwara** (own Supabase project) | The exact same `business-template/*.sql` files | Every Murudeshwara operational table — same shape, physically separate data |
 
 **Verified:** grep across `supabase/migrations/central/001_central_registry.sql`
@@ -21,90 +21,62 @@ tables in the first place.
 
 ## Business-template schema (applied identically to KMG's and Murudeshwara's projects)
 
-| File | Tables / objects | Responsibility |
+| File | Objects | Responsibility |
 |---|---|---|
-| `001_core_schema.sql` | `staff_profiles`, `units`, `materials`, `customers`, `current_role_is()`, `is_active_staff()`, `set_updated_at()` | Roles, reference data, product/customer masters |
-| `002_stock_schema.sql` | `stock_items`, `stock_movements`, `apply_stock_movement()` | Inventory (raw material, blocks, cutting stone) as real movement history, not one quantity field |
-| `003_document_numbering.sql` | `document_sequences`, `next_document_number()` | Safe concurrent numbering per document type per year |
-| `004_quotations.sql` | `quotations`, `quotation_items` | Quotation workflow incl. dimension-based line items |
-| `005_billing.sql` | `bills`, `bill_items`, `sync_bill_payment_status()` | Normal/EV bills, auto-derived payment status |
-| `006_payments_ledger.sql` | `payments`, `customer_ledger`, `append_ledger_entry()`, `record_payment()`, `post_bill_to_ledger()` | Payment recording + tamper-resistant running ledger |
-| `007_transport.sql` | `drivers`, `vehicles`, `trips` | Transport/delivery tracking |
-| `008_expenses.sql` | `expenses` | Admin-only cost tracking |
-| `009_settings_audit.sql` | `settings`, `audit_logs` | Business-specific configuration + audit trail |
-| `010_rls_policies.sql` | RLS policies for every table above | Enforcement layer — see `docs/SECURITY.md` |
+| `001_core_schema.sql` | `staff_profiles`, `units` (empty), `materials`, `customers`, `current_role_is()`, `is_active_staff()`, `set_updated_at()`, `stamp_created_by()` | Roles, reference data, masters |
+| `002_stock_schema.sql` | `stock_items`, `stock_movements`, `apply_stock_movement()`, view `stock_balances` | Movement-based inventory: Opening + Received − Used ± Adjustments = Current |
+| `003_document_numbering.sql` | `document_sequences`, `next_document_number()` | Concurrency-safe *generated* numbers (manual numbers bypass it) |
+| `004_quotations.sql` | `quotations`, `quotation_items` | Provisional quotation module |
+| `005_billing.sql` | `bills`, `bill_items`, `bills_before_write()`, `bill_items_touch_bill()` | EV/Normal bills, derived totals and status |
+| `006_payments_ledger.sql` | `payments`, `customer_ledger`, `post_bill_to_ledger()`, `record_payment()`, `cancel_bill()`, `record_ledger_adjustment()`, internal `append_ledger_entry()` | Customer payments and the append-only ledger |
+| `007_transport.sql` | `drivers`, `vehicles`, `trips` + FKs from `bills` | Transport |
+| `008_expenses.sql` | `expenses` | Admin-only business expenses |
+| `009_settings_audit.sql` | `settings`, `audit_logs`, `audit_row_change()` | Configuration + audit function |
+| `010_rls_policies.sql` | table privileges (column-level for bills/stock) + RLS policies | Enforcement layer |
+| `011_measurement_sheets.sql` | `measurement_sheets`, `measurement_sheet_rows`, view `measurement_sheet_verification` | Independent measurement documents, stored verbatim |
+| `012_audit_triggers.sql` | audit triggers on every operational table | Audit trail |
 
-Every one of these tables carries a primary key (`uuid default gen_random_uuid()`
-or a natural composite key for `document_sequences`), and every foreign
-key points to a table within the *same* business-template schema — there
-is no foreign key anywhere in `business-template/` that reaches into a
-different project or into the central schema (verified by inspection:
-every `references` clause targets `customers`, `materials`, `units`,
-`staff_profiles`, `bills`, `stock_items`, `vehicles`, `drivers`, or
-`trips` — all local tables).
+21 tables. Every foreign key targets a table in the same business database.
+There is no `business_id` column anywhere, and no operational table in the
+Central project.
 
-## Indexes (verified present)
+## Key modelling decisions
 
-`customers` (name full-text + phone), `stock_items`/`stock_movements`
-(material, reference), `quotations`/`bills` (customer, status, number,
-date), `payments` (customer, bill), `customer_ledger` (customer+date),
-`drivers`/`vehicles`/`trips` (status, vehicle, driver), `expenses`
-(date, category), `audit_logs` (module+record, actor). Composite indexes
-were not added beyond these until real query patterns from Phase 6 justify
-them (Rule #63 — don't index everywhere speculatively).
+- **NULL vs 0.** Blank source values are `NULL`: `bill_items.quantity/unit/
+  rate/amount/hsn_code`, `bills.cgst/sgst/igst_percent and _amount`,
+  every measurement-row value. Derived totals (`subtotal`, `tax_amount`,
+  `grand_total`) are real numbers.
+- **Bill arithmetic** is computed in `bills_before_write()`; a line's amount
+  must equal `round(quantity × rate, 2)` when all three are present;
+  `grand_total` is also guarded by a CHECK so it cannot disagree with its
+  parts even if the trigger were disabled.
+- **Bill identity**: `unique (bill_type, bill_number)`; `bill_number_source`
+  records `manual` vs `generated`. `bills.vehicle_number` keeps the number as
+  written; `vehicle_id`/`trip_id` are real FKs. Party name/address/GSTIN are
+  stored on the bill as written.
+- **Ledger**: ordered by an identity column (`entry_seq`) under a
+  per-customer advisory lock; unique `(transaction_type, reference_id)`
+  prevents double-posting; a payment's `(bill_id, customer_id)` is a
+  composite FK to the bill, so a payment cannot name another customer.
+- **Stock**: `quantity_on_hand` and `stock_movements` are writable only via
+  `apply_stock_movement()`; movement direction is checked per type; negative
+  stock is never allowed.
+- **Measurement sheets** have no FK to bills/quotations/payments/ledger/stock,
+  no unit, no formula, and do not enforce `amount = quantity × rate`.
 
-## Constraints (verified present)
+## Concurrency (verified against the function bodies)
 
-- `stock_items.quantity_on_hand >= 0` (`stock_nonnegative` check, unless a
-  caller explicitly passes `p_allow_negative := true` to
-  `apply_stock_movement`).
-- `bills.balance_due` is a **generated column** (`grand_total -
-  amount_received`), so it can never drift out of sync by a missed update.
-- `payments.amount > 0`, `expenses.amount > 0`.
-- Enum-style `check` constraints on every status/type/category/role column
-  (e.g. `staff_profiles.role in ('admin','staff')`,
-  `bills.bill_type in ('normal','ev')`) — invalid values are rejected at
-  the database level, not just in a TypeScript type.
-- `document_sequences` primary key is `(document_type, year)` — this is
-  itself the concurrency guard for numbering (see below).
+- Stock: `select … for update` on the stock item row.
+- Ledger: `pg_advisory_xact_lock` per customer + `entry_seq` ordering.
+- Document numbers: single atomic `insert … on conflict do update`.
+- Payments/bills: the bill row is locked (`for update`) while a payment or a
+  ledger post is applied.
 
-## Concurrency & consistency (verified against actual function bodies, not assumed)
+## Verification
 
-- **Stock**: `apply_stock_movement()` takes `select ... for update` on the
-  specific `stock_items` row before checking/adjusting quantity — two
-  concurrent sales of the last unit of stock will serialize on that row
-  lock; the second one either fails (negative stock check) or proceeds
-  against the updated quantity, never both succeeding against a stale read.
-- **Ledger**: `append_ledger_entry()` takes a Postgres advisory transaction
-  lock keyed on the customer ID (`pg_advisory_xact_lock`) before reading
-  the last running balance, so two simultaneous payments for the same
-  customer cannot compute their new balance from the same stale
-  "last row" and produce two entries with the same (wrong) balance.
-- **Document numbers**: `next_document_number()` uses a single
-  `insert ... on conflict (document_type, year) do update` — Postgres
-  guarantees this upsert is atomic per row, so two staff creating a
-  quotation in the same second cannot receive the same number.
-- **Bills**: `payment_status` is recalculated by a `before insert or
-  update` trigger from `amount_received`/`grand_total` — it is derived,
-  never set directly by application code, so it cannot go stale.
-
-## Corrections made during this verification (see `docs/SECURITY.md` for full detail)
-
-Three functions (`next_document_number`, `append_ledger_entry` +
-`record_payment` + `post_bill_to_ledger`) were **non-functional as
-originally written** — the RLS policies deliberately grant no direct
-INSERT/UPDATE on `document_sequences` or `customer_ledger`, which would
-have silently blocked every document number and every ledger post for
-every role, Admin included. All three are now `SECURITY DEFINER` with an
-explicit in-function `is_active_staff()` authorization check. Two helper
-functions (`is_active_staff`, `current_role_is`) had a genuine infinite
-recursion bug when evaluated as part of `staff_profiles`' own RLS policy;
-both are now `SECURITY DEFINER` with a pinned `search_path`, which breaks
-the recursion by letting their internal query bypass RLS as the table
-owner. A direct `INSERT` policy on `payments` was removed so every payment
-must go through `record_payment()` (closing a gap where a payment could
-have been recorded without updating the bill/ledger).
-
-None of this was caught by "the function exists" — it was caught by
-tracing what role would actually be executing each statement and whether
-an RLS policy exists to permit it.
+`npm run test:db` applies the central and business migrations to real
+PostgreSQL (PGlite, PG 18) as a non-superuser owner role with
+Supabase-equivalent default privileges, and runs the schema, calculation,
+NULL-semantics, numbering, ledger, stock, measurement, RLS, grant, function
+privilege, audit and KMG-vs-Murudeshwara-identity checks under the same
+roles a real API request would use. See `supabase/tests/run.mjs`.

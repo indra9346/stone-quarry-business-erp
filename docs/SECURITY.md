@@ -108,8 +108,7 @@ way to create a payment row is now `record_payment()`.
   `BEGIN PRIVATE KEY`, hardcoded `password =`, `secret =`, account/IFSC
   values found **zero** real secrets — only the string
   `SUPABASE_SERVICE_ROLE_KEY` appearing as a name in comments/docs
-  warning against its use, and empty placeholder JSON in the
-  `payment_identifiers` settings seed row.
+  warning against its use.
 - **Audit logging**: `audit_logs` has no direct UPDATE/DELETE policy for
   any role and its INSERT policy requires `actor_id = auth.uid()` — a
   user can log their own actions but cannot forge another user's audit
@@ -122,35 +121,58 @@ way to create a payment row is now `record_payment()`.
   currently the *only* enforcement, which is the correct order to build
   it in).
 
-## Not yet applicable / genuinely untestable in this environment
+## Second review — database implementation pass
 
-- **Payment-provider secrets, webhook, OAuth secrets**: none exist yet —
-  no payment provider integration has been built or requested. Nothing to
-  audit.
-- **Storage access (Supabase Storage buckets)**: no buckets/policies
-  created yet — logo/PDF storage is Phase 8.
-- **Live RLS behavior under a real JWT**: everything above is verified by
-  *reading* the SQL and reasoning about which role executes which
-  statement. It has **not** been exercised against a running Postgres
-  instance, because no Supabase project exists yet (see
-  `docs/DEVELOPMENT_PLAN.md`). Once you provision the three projects and
-  apply these migrations, the concrete recommendation is to run the Rule
-  #27 cross-business access tests (KMG staff hitting Murudeshwara, URL
-  tampering, etc.) against the real projects before any real data enters
-  them.
+Findings from re-tracing every write path, then **exercising the corrected
+migrations on real PostgreSQL** (`npm run test:db`: PGlite/PG 18, migrations
+run as a non-superuser owner, checks run under `SET ROLE anon/authenticated`
+with Supabase-equivalent default grants).
+
+| # | Severity | Finding | Fix |
+|---|---|---|---|
+| 5 | High | Staff held a blanket `UPDATE` on `bills`, so they could edit `amount_received`, `payment_status`, `grand_total` or `status` directly, defeating the "payments only via `record_payment()`" rule. | Column-level grants: clients can write only descriptive columns; totals are derived by trigger; `amount_received` is written only by `record_payment()`. |
+| 6 | High | `record_payment()`, `post_bill_to_ledger()` and `append_ledger_entry()` trusted caller-supplied customer, amount, payment number and `created_by`; a caller could post any amount, name the wrong customer, forge the actor, or post a bill twice. | Rewritten: all values are read from the bill row, actor is `auth.uid()`, payment numbers are generated, unique ledger reference index prevents double posting, bill must be posted and not over-paid, composite FK ties payment to the bill's customer. `append_ledger_entry()` is no longer callable by clients. |
+| 7 | High | Ledger running balance was ordered by `created_at` (transaction start time), which does not follow lock order; two concurrent postings could compute the balance from the wrong "previous" row. | Ordered by an identity column `entry_seq`. |
+| 8 | High | Staff could write `stock_items.quantity_on_hand` and insert `stock_movements` directly, so stock could drift from its history. `p_allow_negative` contradicted the non-negative CHECK. | Column grants + no insert policy; `apply_stock_movement()` is `SECURITY DEFINER`, takes the actor from `auth.uid()`; negative stock removed as an option; per-type direction checks. |
+| 9 | Medium | `audit_logs` accepted client-written rows (a user could log arbitrary content as themselves) and only a few actions were logged. | No client write privilege; row-change triggers on every operational table (`012_audit_triggers.sql`). |
+| 10 | Medium | Functions were revoked from `public` only. On Supabase, `anon` also holds explicit default `EXECUTE`, so revoking from `public` alone leaves it callable. | Every function is revoked from `public` and `anon`; tests assert this per function. |
+| 11 | Medium | `bills`/`stock`/all tables relied on Supabase's default "ALL to anon + authenticated" grants with RLS as the only barrier. | `010` revokes everything and re-grants the minimum; default privileges revoked for future tables. |
+| 12 | Medium | A posted bill's total/customer could be changed afterwards, silently desynchronising the ledger; staff could delete bills. | `bills_before_write()` freezes a posted bill's identity and total; delete is admin-only and only for an un-posted bill; `cancel_bill()` reverses the ledger debit. |
+| 13 | Low | `next_document_number()` used the server's year, not the business timezone, and accepted any document type. | `Asia/Kolkata` year; CHECK on document type. |
+
+**Removed concept.** The earlier idea that "the person whose number is
+entered receives the amount" is deleted: no column, function, trigger or
+policy reads a phone/mobile number to route money. `npm run test:db`
+scans column names and function bodies to keep it that way.
+
+**Result.** 243 checks pass, including: staff blocked from ledger/expenses/
+audit; anon blocked from every table and function; inactive and profile-less
+users blocked; direct writes to ledger, payments, stock quantity, bill
+totals and audit logs rejected for every client role; KMG and Murudeshwara
+schemas identical (columns, constraints, indexes, function bodies,
+policies).
+
+## Not yet applicable / not yet verified
+
+- **Live Supabase**: the migrations have been verified on real PostgreSQL
+  but **not yet applied to a hosted Supabase project** (none has been
+  created). Supabase-specific behaviour (real JWT claims, `auth.users`
+  triggers, PostgREST) is emulated, not exercised.
+- **Payment-provider secrets, webhook, OAuth secrets**: none exist; no
+  payment provider integration has been built or requested.
+- **Storage buckets**: none created yet (logo/PDF storage is Phase 8).
 - **GitHub repository visibility**: confirmed still public as of this
   review (I did not and will not change it — you said you'll handle that).
   The secret-scan result above means there is currently nothing sensitive
   in the public repo to be exposed by that.
 
-## What you should do before connecting production Supabase projects
+## What to do before connecting production Supabase projects
 
-1. Confirm the corrected migrations (this review's fixes) look right —
-   they change function security context, not any business logic.
-2. Create the 3 Supabase projects and apply migrations per
-   `supabase/README.md`.
-3. Re-run this review's "Verified as already correct" checks against the
-   live projects (e.g. actually try to insert a `customer_ledger` row
-   directly via the API as a non-owner role and confirm it's rejected).
-4. Only then provide `.env.local` values — anon keys only, never
-   service-role keys, and never paste them into chat/commits.
+1. Create the projects and apply the migrations per `supabase/README.md`.
+2. Create the first admin (Auth user + `staff_profiles` row with role
+   `admin`) through the SQL editor or service role — no client can create the
+   first admin.
+3. Re-run the role checks against the live project with real JWTs (staff
+   cannot read the ledger/expenses; cross-business URL tampering).
+4. Provide `.env.local` values — anon keys only, never service-role keys,
+   and never paste them into chat/commits.

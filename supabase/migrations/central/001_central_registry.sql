@@ -4,7 +4,7 @@
 -- stock, ledger, ...) for any business. See ARCHITECTURE.md #7.
 -- ============================================================================
 
-create extension if not exists "pgcrypto";
+-- gen_random_uuid() is built into PostgreSQL 13+, so no extension is needed.
 
 -- ---------------------------------------------------------------------------
 -- central_businesses — the portal registry shown on the Main Branch gateway.

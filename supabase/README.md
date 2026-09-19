@@ -5,6 +5,7 @@ This repo's migrations are split into two independent sets, matching the
 
 ```
 supabase/migrations/central/            -> applied ONCE, to the CENTRAL project
+                                            (001 registry, 002 grants)
 supabase/migrations/business-template/  -> applied to EVERY business project
                                             (KMG's project, Murudeshwara's
                                             project, and any future quarry's
@@ -14,8 +15,10 @@ supabase/migrations/business-template/  -> applied to EVERY business project
 ## Provisioning a new business (Rule #29/#30)
 
 1. Create a new Supabase project for the business (Free/Nano tier is fine to start).
-2. Apply, in order, every file under `supabase/migrations/business-template/`.
-3. Optionally run `supabase/seed.sql` for local/dev testing only — never in production.
+2. Apply, in order, every file under `supabase/migrations/business-template/`
+   (`001` … `012`).
+3. Optionally run `supabase/seed.sql` for local/dev testing only — never in
+   production. It contains generic sample rows only.
 4. Add the new project's URL + anon key to `.env.local` as
    `VITE_<CODE>_SUPABASE_URL` / `VITE_<CODE>_SUPABASE_ANON_KEY`.
 5. Add a row to `central_businesses` in the CENTRAL project (code, name,
@@ -28,6 +31,17 @@ supabase/migrations/business-template/  -> applied to EVERY business project
 
 No application code needs to change — this is why each business has its own
 project running the identical business-template schema (Rule #10/#31).
+
+## Verifying the migrations locally
+
+```bash
+npm run test:db
+```
+
+Applies the central and business-template migrations to real PostgreSQL
+(PGlite) with Supabase-style roles and runs the schema, calculation, ledger,
+stock, RLS and grant checks. Needs no Supabase project, network or
+credentials. Run it after any migration change.
 
 ## Applying migrations
 

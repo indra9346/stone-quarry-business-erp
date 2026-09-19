@@ -6,29 +6,31 @@ Status reflects what is **actually implemented and verified**, not intent.
 - [x] **Phase 1 — Audit.** Greenfield repo; nothing pre-existing to inspect.
 - [x] **Phase 2 — Architecture.** [`ARCHITECTURE.md`](./ARCHITECTURE.md),
       [`DATABASE_ARCHITECTURE.md`](./DATABASE_ARCHITECTURE.md).
-- [x] **Phase 3 — Database.** Migrations written for the central registry
-      and the business-template schema. **Not yet applied to any real
-      Supabase project** — no project exists yet, so the SQL has been
-      reviewed for correctness (`docs/SECURITY.md`) but not executed
-      against a live Postgres instance. Treat as reviewed-but-unverified
-      until run once against a real project.
-- [ ] **Phase 3.5 — Verification pass (this task).** Structure inspected,
-      secrets scanned (clean), migrations re-reviewed and corrected (3 real
-      bugs found and fixed — see `docs/SECURITY.md`), receipts re-analyzed
-      with confidence markers (`docs/RECEIPT_AND_DOCUMENT_ANALYSIS.md`).
+- [x] **Phase 3 — Database.** Central registry + business-template
+      migrations (`001`–`012`), corrected against the real source documents
+      (`docs/RECEIPT_AND_DOCUMENT_ANALYSIS.md`) and verified on real
+      PostgreSQL with `npm run test:db` (243 checks: schema, arithmetic,
+      NULL semantics, ledger, stock, RLS, grants, audit, KMG/Murudeshwara
+      identity).
+- [x] **Phase 3.5 — Verification and correction pass.** Bill arithmetic
+      moved into the database; payment/ledger/stock/audit write paths
+      hardened; measurement sheets added; withdrawn payment-recipient
+      concept removed; seed data made generic (see `docs/SECURITY.md`).
+- [ ] **Phase 3.6 — Provision hosted databases.** Create the Central, KMG and
+      Murudeshwara Supabase projects and apply the migrations. **Not done**:
+      needs your Supabase account access; nothing here creates projects or
+      handles credentials.
 - [ ] **Phase 4 — Authentication wiring against a real Supabase project.**
-      Code is ready in `src/features/auth/`. Blocked on: you creating the
-      Central/KMG/Murudeshwara Supabase projects and applying the
-      migrations (`supabase/README.md`).
+      Code is ready in `src/features/auth/`. Blocked on Phase 3.6.
 - [ ] **Phase 5 — Design system components** (tables, forms, modals,
       toasts, empty/loading states) — built alongside the first real
       module rather than guessed in the abstract.
 - [ ] **Phase 6 — Core modules UI**, in order: Customers → Materials/Stock
       → Quotations → Bills → Payments → Ledger → Vehicles/Drivers/Trips →
-      Expenses → Reports → Settings → Audit logs. **Blocked** on the EV vs
-      Normal Bill answer and the dimension→quantity formula (see
-      `BUSINESS_RULES.md`) before the Bills/Quotations screens can be
-      finalized — everything before Bills (Customers, Stock intake) is not
+      Expenses → Reports → Settings → Audit logs. **Blocked** on the EV Bill
+      format, a real quotation sample, and (for measurement sheets) the
+      PCS/unit/quantity meaning — see `BUSINESS_RULES.md` — before those
+      screens can be finalized — everything before Bills (Customers, Stock intake) is not
       blocked and can proceed first.
 - [ ] **Phase 7 — Integration tests** across modules
       (quotation → bill → stock movement → ledger → payment → outstanding
@@ -43,14 +45,11 @@ Status reflects what is **actually implemented and verified**, not intent.
       `docs/SECURITY.md` "Testing performed" — nothing has run against a
       live database yet since none exists).
 
-## What is genuinely done vs. what looks done
+## What is genuinely done vs. what is not
 
-Done and verified by inspection: repo structure, git state, `.gitignore`
-coverage, absence of secrets, RLS/function logic (corrected), receipt
-analysis rigor.
+Done and verified: repo structure, git state, absence of secrets, the
+complete database schema exercised on real PostgreSQL (`npm run test:db`),
+role/RLS/grant behaviour, and corrected document analysis.
 
-**Not done, despite files existing:** no code in this repo has ever been
-executed against a real database (`npm install`, typecheck and build do
-now succeed) — see `docs/SECURITY.md` "Testing performed" and the final report for exactly
-what could and couldn't be run in this environment. Do not read the
-presence of `.tsx`/`.sql` files as evidence the app works end-to-end yet.
+Not done: no hosted Supabase project exists; no operational module UI is
+built; the app has never talked to a live database.
