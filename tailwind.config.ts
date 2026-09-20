@@ -76,6 +76,10 @@ export default {
           '0%, 100%': { opacity: '0.85' },
           '50%': { opacity: '1' },
         },
+        kenburns: {
+          '0%': { transform: 'scale(1)' },
+          '100%': { transform: 'scale(1.07)' },
+        },
         rise: {
           '0%': { opacity: '0', transform: 'translateY(14px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -83,6 +87,7 @@ export default {
       },
       animation: {
         'fade-up': 'fade-up 220ms ease-out both',
+        kenburns: 'kenburns 32s ease-in-out infinite alternate',
         rise: 'rise 600ms cubic-bezier(0.22, 1, 0.36, 1) both',
         drift: 'drift 26s ease-in-out infinite',
         'drift-slow': 'drift 44s ease-in-out infinite reverse',

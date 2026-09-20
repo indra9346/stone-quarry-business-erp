@@ -7,11 +7,13 @@ import { cn } from '@/lib/utils'
  * few floating dust motes. It is decorative (aria-hidden), dark enough for white
  * text, and every animation stops under "reduce motion".
  *
+ * A real photo (public/media/quarry-gateway.webp) is layered over the artwork when
+ * `image` is given; the artwork shows while it loads or if it is missing.
  * An optional looping video (public/media/<name>.mp4) is layered on top when
  * VITE_BG_VIDEO=1 is set at build time; it is muted, never autoplays on phones'
  * data-saver, and falls back to this artwork if the file is missing.
  */
-export default function Backdrop({ className, video, compact }: { className?: string; video?: string; compact?: boolean }) {
+export default function Backdrop({ className, video, image, compact, position = 'center' }: { className?: string; video?: string; image?: string; compact?: boolean; position?: string }) {
   const uid = useId().replace(/:/g, '')
   const withVideo = video && import.meta.env.VITE_BG_VIDEO === '1'
   return (
@@ -81,6 +83,18 @@ export default function Backdrop({ className, video, compact }: { className?: st
           />
         ))}
 
+      {image && (
+        <img
+          src={image}
+          alt=""
+          decoding="async"
+          fetchPriority={compact ? 'auto' : 'high'}
+          className="absolute inset-0 h-full w-full animate-kenburns object-cover"
+          style={{ objectPosition: position }}
+          onError={(e) => (e.currentTarget.style.display = 'none')}
+        />
+      )}
+
       {withVideo && (
         <video
           className="absolute inset-0 h-full w-full object-cover opacity-70 motion-reduce:hidden"
@@ -97,6 +111,7 @@ export default function Backdrop({ className, video, compact }: { className?: st
 
       {/* keeps text readable */}
       <div className="absolute inset-0 bg-gradient-to-b from-navy-950/70 via-navy-950/30 to-navy-950/80" />
+      {image && <div className="absolute inset-0 bg-gradient-to-r from-navy-950/75 via-navy-950/25 to-transparent" />}
     </div>
   )
 }

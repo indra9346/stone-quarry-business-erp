@@ -31,7 +31,7 @@ export default function Dashboard() {
   return (
     <div>
       <section className="relative mb-6 animate-rise overflow-hidden rounded-lg shadow-card ring-1 ring-stone-300/70">
-        <Backdrop compact video="quarry-dashboard" />
+        <Backdrop compact image="/media/quarry-gateway.webp" position="50% 62%" video="quarry-dashboard" />
         <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-7 sm:py-9">
           <div>
             <p className="text-xs font-medium text-amber-400">{formatDate(today)}</p>

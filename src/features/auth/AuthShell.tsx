@@ -9,7 +9,7 @@ export default function AuthShell({ title, subtitle, children }: { title: string
   const { profile } = useBusinessContext()
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <Backdrop video="quarry-gateway" />
+      <Backdrop image="/media/quarry-gateway.webp" video="quarry-gateway" position="65% 50%" />
       <div className="relative w-full max-w-sm animate-rise">
         <Link to="/" className="mb-6 inline-flex items-center gap-1.5 text-xs text-stone-300 hover:text-white">
           <ArrowLeft className="h-3.5 w-3.5" /> Central gateway
