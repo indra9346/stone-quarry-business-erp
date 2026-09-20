@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
 import { useBizMutation, useBizQuery } from '@/hooks/useBiz'
 import { useSettings, useUnits } from '@/hooks/useLookups'
-import { createStaffProfile, createUnit, listStaff, saveSetting, updateStaff } from '@/services/catalog'
+import { createStaffLogin, createStaffProfile, createUnit, listStaff, saveSetting, updateStaff } from '@/services/catalog'
 import { listStock } from '@/services/operations'
 import { Card, CardHeader, PageHeader } from '@/components/ui/layout'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
@@ -218,6 +219,15 @@ function UsersTab() {
   const [id, setId] = useState('')
   const [name, setName] = useState('')
   const [role, setRole] = useState<'admin' | 'staff'>('staff')
+  const [lEmail, setLEmail] = useState('')
+  const [lPassword, setLPassword] = useState('')
+  const [lName, setLName] = useState('')
+  const [lRole, setLRole] = useState<'admin' | 'staff'>('staff')
+  const [lDone, setLDone] = useState<string | null>(null)
+  const login = useBizMutation(createStaffLogin, {
+    invalidate: [['staff']],
+    onSuccess: () => { setLDone(`Login created for ${lEmail.trim()}. Share the email and password with them privately.`); setLEmail(''); setLPassword(''); setLName('') },
+  })
   const [error, setError] = useState<string | null>(null)
 
   const columns: Column<StaffProfile>[] = [
@@ -239,7 +249,30 @@ function UsersTab() {
         {error && <p className="px-5 pb-4 text-sm text-red-700" role="alert">{error}</p>}
       </Card>
       <Card>
-        <CardHeader title="Grant access to an existing login" description="First create the person's login in Supabase → Authentication → Users for THIS business's project, then paste their User ID here. Logins cannot be created from the browser." />
+        <CardHeader title="Add a staff login" description="Creates the sign-in and gives it access to THIS business only. You choose the password and pass it to them; they can change it later with “Forgot password”." />
+        <form
+          className="grid gap-3 p-5 sm:grid-cols-2 sm:items-end"
+          onSubmit={(e) => {
+            e.preventDefault()
+            setLDone(null)
+            if (!lName.trim()) return setError("Enter the person's name.")
+            if (lPassword.length < 8) return setError('The password must be at least 8 characters.')
+            setError(null)
+            login.mutate({ email: lEmail.trim(), password: lPassword, full_name: lName.trim(), role: lRole }, { onError: (er) => setError(er.message) })
+          }}
+        >
+          <FormField label="Full name" required>{(p) => <Input {...p} required value={lName} onChange={(e) => setLName(e.target.value)} />}</FormField>
+          <FormField label="Email" required>{(p) => <Input {...p} type="email" required autoComplete="off" value={lEmail} onChange={(e) => setLEmail(e.target.value)} />}</FormField>
+          <FormField label="Password" required hint="At least 8 characters.">{(p) => <PasswordInput {...p} required autoComplete="new-password" value={lPassword} onChange={(e) => setLPassword(e.target.value)} />}</FormField>
+          <FormField label="Role">{(p) => <Select {...p} value={lRole} onChange={(e) => setLRole(e.target.value as 'admin' | 'staff')}><option value="staff">Staff</option><option value="admin">Admin</option></Select>}</FormField>
+          <div className="sm:col-span-2">
+            <Button type="submit" variant="primary" loading={login.isPending}>Create login</Button>
+            {lDone && <p className="mt-3 text-sm text-emerald-700" role="status">{lDone}</p>}
+          </div>
+        </form>
+      </Card>
+      <Card>
+        <CardHeader title="Grant access to an existing login" description="For a login you already created in Supabase → Authentication → Users for THIS business's project: paste their User ID here." />
         <div className="grid gap-3 p-5 sm:grid-cols-4 sm:items-end">
           <FormField label="User ID (UUID)" className="sm:col-span-2">{(p) => <Input {...p} value={id} onChange={(e) => setId(e.target.value)} />}</FormField>
           <FormField label="Full name">{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</FormField>

@@ -6,6 +6,7 @@ import NoAccess from './NoAccess'
 import NotProvisioned from './NotProvisioned'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input } from '@/components/ui/form'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { Spinner } from '@/components/ui/feedback'
 
 /** Business authentication — the entry to ONE business portal. */
@@ -52,7 +53,7 @@ export default function BusinessSignIn() {
         </FormField>
         <FormField label="Password" required>
           {(p) => (
-            <Input {...p} type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput {...p} required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
           )}
         </FormField>
         {error && (

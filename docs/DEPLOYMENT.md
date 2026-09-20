@@ -41,6 +41,19 @@ types of each project: 21 tables, 2 views, the same functions).
   `.deploy/business-template`: `npx supabase link --project-ref <ref>` and
   `npx supabase db push`.
 
+## Adding staff from the app (Settings → Users / staff → Add a staff login)
+Creating a login needs the project's private service key, so it runs as a small
+Edge Function, `supabase/functions/create-staff`, deployed **once per project**
+(it only ever touches the project it is deployed to, and refuses anyone who is not
+an active admin of that business). It changes no tables or security rules. From the
+repository root, after `npx supabase login`:
+
+```
+npx supabase functions deploy create-staff --project-ref <project-ref> --use-api
+```
+
+Until it is deployed, the form says so and the SQL route (`01_make_admin.sql`) still works.
+
 ## Verify
 - `npm run test:db` — local database rules (no credentials).
 - `npm run smoke:kmg` — anonymous checks against the project in `.env.local`;

@@ -4,7 +4,8 @@ import { useBusinessContext } from './businessContextValue'
 import AuthShell from './AuthShell'
 import NotProvisioned from './NotProvisioned'
 import { Button } from '@/components/ui/Button'
-import { FormField, Input } from '@/components/ui/form'
+import { FormField } from '@/components/ui/form'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { Spinner } from '@/components/ui/feedback'
 
 /** Landing page of the emailed reset link (Supabase signs the user in with a recovery session). */
@@ -55,10 +56,10 @@ export default function ResetPassword() {
     <AuthShell title="Choose a new password">
       <form onSubmit={submit} className="space-y-4">
         <FormField label="New password" required hint="At least 8 characters.">
-          {(p) => <Input {...p} type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />}
+          {(p) => <PasswordInput {...p} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />}
         </FormField>
         <FormField label="Confirm password" required>
-          {(p) => <Input {...p} type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
+          {(p) => <PasswordInput {...p} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
         </FormField>
         {error && (
           <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">

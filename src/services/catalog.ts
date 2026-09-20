@@ -77,6 +77,25 @@ export async function createStaffProfile(
   okVoid(await c.from('staff_profiles').insert({ ...p, status: 'active' }))
 }
 
+/** Creates a login + role through the create-staff Edge Function (admin only, server-checked). */
+export async function createStaffLogin(
+  c: SupabaseClient,
+  p: { email: string; password: string; full_name: string; role: 'admin' | 'staff' },
+): Promise<void> {
+  const { error } = await c.functions.invoke('create-staff', { body: p })
+  if (!error) return
+  let message = error.message
+  const response = (error as { context?: Response }).context
+  if (response && typeof response.clone === 'function') {
+    try {
+      const body = (await response.clone().json()) as { error?: string }
+      if (body.error) message = body.error
+    } catch { /* keep the generic message */ }
+    if (response.status === 404) message = 'Creating logins is not switched on for this business yet (the create-staff function has not been deployed).'
+  }
+  throw new Error(message)
+}
+
 /* -------------------------------------------------------------- settings */
 export async function listSettings(c: SupabaseClient): Promise<Record<string, Record<string, unknown>>> {
   const rows = ok(await c.from('settings').select('*')) as SettingRow[]
