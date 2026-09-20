@@ -74,9 +74,6 @@ export default function MainBranchHome() {
           </ul>
         </main>
 
-        <footer className="animate-rise pb-2 text-xs text-stone-500" style={{ animationDelay: '600ms' }}>
-          Secure, isolated business databases · Indian business formats (₹, DD-MM-YYYY)
-        </footer>
       </div>
     </div>
   )
