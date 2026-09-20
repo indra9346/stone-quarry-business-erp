@@ -471,10 +471,22 @@ eq('staff cannot read audit logs', (await rows(db, 'select * from audit_logs')).
 await fails(db, 'staff cannot forge audit rows', `insert into audit_logs (actor_id,action,module) values ('${ADMIN}','x','x')`, /permission denied/)
 eq('staff cannot change roles (0 rows)', (await db.query(`update staff_profiles set role='admin' where user_id='${STAFF}'`)).affectedRows, 0)
 eq('staff can read the roster (no RLS recursion)', (await rows(db, 'select * from staff_profiles')).length, 3)
+await fails(db, 'staff cannot add a staff profile (create-staff relies on admin-only insert)', `insert into staff_profiles (user_id, full_name, role) values ('${NOBODY}','x','staff')`, /row-level security/)
 eq('staff cannot write materials (0 rows)', (await db.query(`update materials set name='hacked'`)).affectedRows, 0)
 await fails(db, 'staff cannot define units', `insert into units (code,label) values ('x','x')`, /row-level security/)
 check('staff can read bill payment fields (amount received)', (await rows(db, 'select amount_received from bills')).length > 0)
 
+// create-staff Edge Function: the login is made with the auth admin API, then this exact
+// insert is run AS THE CALLING ADMIN (the service-role key has no table rights here).
+await asOwner(db)
+await db.exec(`insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000d1','new@test')`)
+await asUser(db, ADMIN)
+await db.query(`insert into staff_profiles (user_id, full_name, role, status) values ('00000000-0000-0000-0000-0000000000d1','New Staff','staff','active')`)
+eq('admin can add a staff profile (as an authenticated admin)', (await rows(db, `select role from staff_profiles where user_id='00000000-0000-0000-0000-0000000000d1'`))[0]?.role, 'staff')
+await db.query(`delete from staff_profiles where user_id='00000000-0000-0000-0000-0000000000d1'`)
+await asOwner(db)
+await db.exec(`delete from auth.users where id='00000000-0000-0000-0000-0000000000d1'`)
+await asUser(db, ADMIN)
 await asUser(db, ADMIN)
 await db.query(`insert into expenses (expense_number,category,amount,expense_time) values ('EXP-T1','fuel',1250.50,'09:30')`)
 eq('admin can record an expense', (await rows(db, 'select * from expenses')).length, 1)

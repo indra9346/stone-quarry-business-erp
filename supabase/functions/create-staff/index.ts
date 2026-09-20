@@ -10,7 +10,8 @@
 // Nothing here changes tables or RLS. It:
 //   1. checks the caller's JWT and that they are an active admin (staff_profiles),
 //   2. creates the auth user (email pre-confirmed, so they can sign in at once),
-//   3. inserts their staff_profiles row; if that fails, removes the new login.
+//   3. inserts their staff_profiles row as the calling admin (RLS applies); if that
+//      fails, removes the new login again.
 //
 // Deploy:  npx supabase@latest functions deploy create-staff --project-ref <ref> --use-api
 
@@ -81,7 +82,11 @@ Deno.serve(async (req: Request) => {
     })
   }
 
-  const { error: profileError } = await admin
+  // The role row is written AS THE CALLING ADMIN, under the database's own rules
+  // ("admin manages staff profiles"). The service-role key has no table rights in
+  // this database (only signed-in roles are granted), and needs none: it is used
+  // solely for the auth admin API above.
+  const { error: profileError } = await asCaller
     .from('staff_profiles')
     .insert({ user_id: created.user.id, full_name: fullName, role, status: 'active' })
   if (profileError) {
