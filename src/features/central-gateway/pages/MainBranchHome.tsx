@@ -3,6 +3,7 @@ import { BUSINESS_CODES, BUSINESS_REGISTRY } from '@/types/business'
 import { isBusinessConfigured } from '@/lib/supabase/business-client'
 import Backdrop from '@/components/Backdrop'
 import { cn } from '@/lib/utils'
+import { useDarkPage } from '@/hooks/useDarkPage'
 
 /**
  * Central gateway. Static business metadata only — no operational data is
@@ -14,15 +15,20 @@ import { cn } from '@/lib/utils'
  * never another business's data.
  */
 export default function MainBranchHome() {
+  useDarkPage()
   return (
     <div className="relative min-h-screen overflow-x-clip">
-      <Backdrop className="fixed" image="/media/quarry-gateway.webp" video="quarry-gateway" />
+      <Backdrop className="fixed h-[100lvh]" image="/media/quarry-gateway.webp" video="quarry-gateway" />
 
-      <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-6 pb-10 sm:px-10">
-        <header className="sticky top-0 z-20 -mx-6 flex animate-rise items-center gap-3 bg-navy-950/55 px-6 py-3 backdrop-blur-md sm:-mx-10 sm:px-10">
+      {/* Full-width bar that stays at the top while the page scrolls; fades out at its lower edge. */}
+      <header className="sticky top-0 z-20 bg-gradient-to-b from-navy-950/85 via-navy-950/55 to-transparent">
+        <div className="mx-auto flex max-w-5xl animate-rise items-center gap-3 px-6 py-3 sm:px-10">
           <img src="/favicon-192.png" alt="" width={40} height={40} className="h-10 w-10 rounded-md bg-white" />
           <span className="text-sm font-semibold tracking-wide text-stone-200">StoneQuarryERP</span>
-        </header>
+        </div>
+      </header>
+
+      <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col px-6 pb-10 sm:px-10">
 
         <main className="flex flex-1 flex-col justify-center py-14">
           <p className="animate-rise text-sm font-medium text-amber-400" style={{ animationDelay: '80ms' }}>
@@ -35,7 +41,7 @@ export default function MainBranchHome() {
             Choose a business to continue. Each one runs on its own database with its own logins, so signing in to one gives no access to the other.
           </p>
 
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2">
+          <ul className="mt-20 grid gap-5 sm:mt-10 sm:grid-cols-2">
             {BUSINESS_CODES.map((code, i) => {
               const b = BUSINESS_REGISTRY[code]
               const connected = isBusinessConfigured(code)

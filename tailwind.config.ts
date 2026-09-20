@@ -84,6 +84,13 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(14px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        // Smoke drifts sideways and a little upward, thinning out as it goes.
+        'smoke-drift': {
+          '0%': { opacity: '0', transform: 'translate3d(-14%, 8%, 0) scale(0.92)' },
+          '18%': { opacity: '1' },
+          '78%': { opacity: '0.85' },
+          '100%': { opacity: '0', transform: 'translate3d(30%, -14%, 0) scale(1.3)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 220ms ease-out both',
@@ -93,6 +100,9 @@ export default {
         'drift-slow': 'drift 44s ease-in-out infinite reverse',
         dust: 'dust 14s linear infinite',
         sun: 'sun 9s ease-in-out infinite',
+        'smoke-a': 'smoke-drift 46s linear infinite',
+        'smoke-b': 'smoke-drift 62s linear infinite',
+        'smoke-c': 'smoke-drift 78s linear infinite',
       },
     },
   },
