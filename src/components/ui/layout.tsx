@@ -84,7 +84,7 @@ export function KpiCard({
   tone?: keyof typeof kpiTone
 }) {
   return (
-    <div className="rounded-lg bg-white px-4 py-3.5 shadow-card ring-1 ring-stone-300/70">
+    <div className="rounded-lg border-l-4 border-amber-500 bg-white px-4 py-3.5 shadow-card ring-1 ring-stone-300/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift">
       <p className="text-xs font-medium text-stone-500">{label}</p>
       {loading ? (
         <Skeleton className="mt-2 h-7 w-28" />

@@ -10,6 +10,7 @@ interface ImportMetaEnv {
   readonly VITE_APP_NAME: string
   readonly VITE_DEFAULT_TIMEZONE: string
   readonly VITE_DEFAULT_CURRENCY: string
+  readonly VITE_BG_VIDEO?: string
 }
 
 interface ImportMeta {

@@ -618,6 +618,18 @@ const runBlock = async (file, subs) => {
   eq('02_structure_checks.sql: functions authenticated can execute', v['functions authenticated can execute'],
     'apply_stock_movement, cancel_bill, current_role_is, is_active_staff, next_document_number, post_bill_to_ledger, record_ledger_adjustment, record_payment')
   eq('02_structure_checks.sql: bills unique constraint', v['bills unique constraint'], 'UNIQUE (bill_type, bill_number)')
+
+  // 01_make_admin.sql: the email-based inserts create exactly one admin and one staff profile.
+  await asOwner(db)
+  await db.exec(`insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000e1','new-admin@test'),('00000000-0000-0000-0000-0000000000e2','new-staff@test')`)
+  const stmts = manual('01_make_admin.sql').replace(/--[^\n]*\n/g, '').split(';').map((x) => x.trim()).filter(Boolean)
+  const inserts = stmts.filter((x) => x.startsWith('insert'))
+  eq('01_make_admin.sql has an admin insert and a staff insert', inserts.length, 2)
+  for (const q of inserts) await db.exec(q.replace('admin@example.com', 'new-admin@test').replace('staff@example.com', 'new-staff@test'))
+  const made = await rows(db, `select role, status from staff_profiles where user_id in ('00000000-0000-0000-0000-0000000000e1','00000000-0000-0000-0000-0000000000e2') order by role`)
+  eq('01_make_admin.sql creates one admin and one staff, both active', JSON.stringify(made), JSON.stringify([{ role: 'admin', status: 'active' }, { role: 'staff', status: 'active' }]))
+  const none = await db.query(`insert into public.staff_profiles (user_id, full_name, role) select id, 'x', 'staff' from auth.users where email = 'nobody@nowhere'`)
+  eq('a wrong email inserts 0 rows (no bad UUID possible)', none.affectedRows, 0)
 }
 
 // ---------------------------------------------------------------------------

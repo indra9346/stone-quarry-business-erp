@@ -6,7 +6,8 @@ import { useBusinessContext } from '@/features/auth/businessContextValue'
 import { useBizQuery } from '@/hooks/useBiz'
 import { useAlerts } from '@/hooks/useAlerts'
 import { loadKpis, recentActivity, salesByDay } from '@/services/dashboard'
-import { Card, CardHeader, CurrencyDisplay, DateRangePicker, KpiCard, PageHeader } from '@/components/ui/layout'
+import { Card, CardHeader, CurrencyDisplay, DateRangePicker, KpiCard } from '@/components/ui/layout'
+import Backdrop from '@/components/Backdrop'
 import { BillStateBadge, QuotationStatusBadge, StatusBadge } from '@/components/ui/StatusBadge'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/feedback'
 import { daysAgoIST, formatDate, formatINR, todayIST } from '@/lib/format'
@@ -29,24 +30,28 @@ export default function Dashboard() {
 
   return (
     <div>
-      <PageHeader
-        title="Dashboard"
-        description={`${profile.name} · ${formatDate(today)}`}
-        actions={
-          <>
-            <Link to={`${base}/bills/new?type=normal`} className="rounded-md bg-navy-800 px-3.5 py-2 text-sm font-medium text-white hover:bg-navy-700">
-              New Normal Bill
-            </Link>
-            <Link to={`${base}/bills/new?type=ev`} className="rounded-md bg-amber-500 px-3.5 py-2 text-sm font-semibold text-navy-950 hover:bg-amber-400">
+      <section className="relative mb-6 animate-rise overflow-hidden rounded-lg shadow-card ring-1 ring-stone-300/70">
+        <Backdrop compact video="quarry-dashboard" />
+        <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-7 sm:py-9">
+          <div>
+            <p className="text-xs font-medium text-amber-400">{formatDate(today)}</p>
+            <h1 className="mt-1 text-2xl font-semibold text-white">{profile.name}</h1>
+            <p className="mt-1 text-sm text-stone-300">Business overview</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link to={`${base}/bills/new?type=ev`} className="rounded-md bg-amber-500 px-3.5 py-2 text-sm font-semibold text-navy-950 transition-all hover:bg-amber-400 active:scale-[0.98]">
               New EV Bill
             </Link>
-          </>
-        }
-      />
+            <Link to={`${base}/bills/new?type=normal`} className="rounded-md bg-white/10 px-3.5 py-2 text-sm font-medium text-white ring-1 ring-white/20 transition-all hover:bg-white/20 active:scale-[0.98]">
+              New Normal Bill
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {kpis.error && <ErrorState error={kpis.error} onRetry={() => void kpis.refetch()} title="Could not load key figures" />}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <KpiCard
           label="Today's sales"
           loading={kpis.isLoading}
