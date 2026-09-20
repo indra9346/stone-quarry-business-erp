@@ -12,7 +12,7 @@
 //   2. creates the auth user (email pre-confirmed, so they can sign in at once),
 //   3. inserts their staff_profiles row; if that fails, removes the new login.
 //
-// Deploy:  supabase functions deploy create-staff --project-ref <ref> --use-api
+// Deploy:  npx supabase@latest functions deploy create-staff --project-ref <ref> --use-api
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 

@@ -46,10 +46,10 @@ Creating a login needs the project's private service key, so it runs as a small
 Edge Function, `supabase/functions/create-staff`, deployed **once per project**
 (it only ever touches the project it is deployed to, and refuses anyone who is not
 an active admin of that business). It changes no tables or security rules. From the
-repository root, after `npx supabase login`:
+repository root, after `npx supabase@latest login` (the older 1.x CLI lacks `--use-api` and would need Docker):
 
 ```
-npx supabase functions deploy create-staff --project-ref <project-ref> --use-api
+npx supabase@latest functions deploy create-staff --project-ref <project-ref> --use-api
 ```
 
 Until it is deployed, the form says so and the SQL route (`01_make_admin.sql`) still works.
