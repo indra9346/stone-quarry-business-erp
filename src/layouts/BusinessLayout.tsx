@@ -135,7 +135,7 @@ export default function BusinessLayout() {
           </div>
 
           <form onSubmit={onSearch} className="relative ml-auto w-full max-w-xs" role="search">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -transtone-y-1/2 text-stone-400" aria-hidden />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}

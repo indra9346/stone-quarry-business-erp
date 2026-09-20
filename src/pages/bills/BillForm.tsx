@@ -299,7 +299,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
         <div className="space-y-6">
           <Card>
             <CardHeader title="Tax & charges" description="Leave blank when not applicable — blank is stored as “not used”, not 0." />
-            <div className="grid grid-cols-3 gap-3 p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5">
               <FormField label="CGST %">{(p) => <Input {...p} inputMode="decimal" value={cgst} onChange={(e) => setCgst(e.target.value)} />}</FormField>
               <FormField label="SGST %">{(p) => <Input {...p} inputMode="decimal" value={sgst} onChange={(e) => setSgst(e.target.value)} />}</FormField>
               <FormField label="IGST %">{(p) => <Input {...p} inputMode="decimal" value={igst} onChange={(e) => setIgst(e.target.value)} />}</FormField>

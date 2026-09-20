@@ -43,7 +43,7 @@ export function DocumentStatus({ label, tone = 'red' }: { label: string; tone?: 
     <div
       aria-hidden
       className={cn(
-        'pointer-events-none absolute left-1/2 top-40 -transtone-x-1/2 -rotate-12 select-none rounded border-4 px-6 py-2 text-5xl font-black uppercase tracking-widest opacity-15',
+        'pointer-events-none absolute left-1/2 top-40 -translate-x-1/2 -rotate-12 select-none rounded border-4 px-6 py-2 text-5xl font-black uppercase tracking-widest opacity-15',
         tone === 'red' ? 'border-red-600 text-red-600' : 'border-amber-600 text-amber-600',
       )}
     >
