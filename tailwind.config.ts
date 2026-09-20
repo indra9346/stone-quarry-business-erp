@@ -84,6 +84,13 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(14px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        // A plume leaves its source, climbs, leans with the wind and thins out.
+        'smoke-rise': {
+          '0%': { opacity: '0', transform: 'translate3d(0, 6%, 0) scale(0.55)' },
+          '15%': { opacity: '1' },
+          '70%': { opacity: '0.8' },
+          '100%': { opacity: '0', transform: 'translate3d(16%, -34%, 0) scale(1.45)' },
+        },
         // Smoke drifts sideways and a little upward, thinning out as it goes.
         'smoke-drift': {
           '0%': { opacity: '0', transform: 'translate3d(-14%, 8%, 0) scale(0.92)' },
@@ -103,6 +110,9 @@ export default {
         'smoke-a': 'smoke-drift 46s linear infinite',
         'smoke-b': 'smoke-drift 62s linear infinite',
         'smoke-c': 'smoke-drift 78s linear infinite',
+        'rise-a': 'smoke-rise 16s ease-out infinite',
+        'rise-b': 'smoke-rise 22s ease-out infinite',
+        'rise-c': 'smoke-rise 28s ease-out infinite',
       },
     },
   },

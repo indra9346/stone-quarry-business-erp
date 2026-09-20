@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { cn } from '@/lib/utils'
+import ParallaxPhoto from './ParallaxPhoto'
 
 /**
  * Quarry backdrop drawn in SVG + CSS (no image or video download): a dawn sky
@@ -109,15 +110,18 @@ export default function Backdrop({ className, video, image, compact, position = 
               : 'aspect-[1.3] [mask-image:linear-gradient(to_bottom,#000_62%,transparent)] md:inset-0 md:aspect-auto md:[mask-image:none]',
           )}
         >
-          <img
-            src={image}
-            alt=""
-            decoding="async"
-            fetchPriority={compact ? 'auto' : 'high'}
-            className="h-full w-full animate-kenburns object-cover [object-position:62%_50%] md:[object-position:var(--pos)]"
-            style={{ ['--pos' as string]: position }}
-            onError={(e) => (e.currentTarget.style.display = 'none')}
-          />
+          {compact ? (
+            <img
+              src={image}
+              alt=""
+              decoding="async"
+              className="h-full w-full animate-kenburns object-cover md:[object-position:var(--pos)]"
+              style={{ ['--pos' as string]: position }}
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+          ) : (
+            <ParallaxPhoto src={image} position={position} mobilePosition="62% 50%" />
+          )}
           {showSmoke && <Smoke />}
         </div>
       )}
@@ -148,6 +152,13 @@ export default function Backdrop({ className, video, image, compact, position = 
  * steam in a working pit. Soft wispy textures (public/media/smoke-*.webp), blended so they
  * pick up the photo's own light. Hidden when the visitor asks for reduced motion.
  */
+// Real pixel sizes, so each image reserves its space before it has loaded.
+const SMOKE_SIZE: Record<string, [number, number]> = {
+  '/media/smoke-a.webp': [1400, 480],
+  '/media/smoke-b.webp': [1100, 520],
+  '/media/smoke-c.webp': [760, 940],
+}
+
 function Plume({ src, box, anim, delay, flip }: { src: string; box: string; anim: string; delay: string; flip?: boolean }) {
   // The wrapper positions (and mirrors) the plume; the image inside is the part that animates.
   return (
@@ -155,9 +166,10 @@ function Plume({ src, box, anim, delay, flip }: { src: string; box: string; anim
       <img
         src={src}
         alt=""
+        width={SMOKE_SIZE[src]?.[0]}
+        height={SMOKE_SIZE[src]?.[1]}
         decoding="async"
-        loading="lazy"
-        className={`w-full mix-blend-screen will-change-transform opacity-0 ${anim}`}
+        className={`h-auto w-full mix-blend-screen will-change-transform opacity-0 ${anim}`}
         style={{ animationDelay: delay }}
         onError={(e) => (e.currentTarget.style.display = 'none')}
       />
@@ -166,11 +178,17 @@ function Plume({ src, box, anim, delay, flip }: { src: string; box: string; anim
 }
 
 function Smoke() {
+  // Placed over the spots in the photo where dust and haze really collect: the blast dust at
+  // the upper left, the mist trailing off the excavator, the haze on the right edge and the
+  // fog lying over the pit floor. The first value of each box is for phones, "md:" for wide screens.
   return (
     <>
-      <Plume src="/media/smoke-a.webp" box="left-[28%] top-[34%] w-[78%]" anim="animate-smoke-a" delay="-14s" />
-      <Plume src="/media/smoke-b.webp" box="left-[46%] top-[16%] w-[62%]" anim="animate-smoke-b" delay="-36s" flip />
-      <Plume src="/media/smoke-a.webp" box="left-[-8%] top-[48%] w-[64%]" anim="animate-smoke-c" delay="-52s" flip />
+      <Plume src="/media/smoke-c.webp" box="left-[11%] top-[-22%] w-[30%] md:left-[25%] md:top-[-7.5%] md:w-[14%]" anim="animate-rise-a" delay="-4s" />
+      <Plume src="/media/smoke-c.webp" box="hidden md:block md:left-[47%] md:top-[25%] md:w-[12%]" anim="animate-rise-c" delay="-14s" flip />
+      <Plume src="/media/smoke-b.webp" box="left-[45%] top-[-4%] w-[50%] md:left-[44%] md:top-[-2%] md:w-[26%]" anim="animate-smoke-b" delay="-30s" />
+      <Plume src="/media/smoke-a.webp" box="left-[62%] top-[8%] w-[55%] md:left-[72%] md:top-[6%] md:w-[40%]" anim="animate-smoke-a" delay="-12s" flip />
+      <Plume src="/media/smoke-a.webp" box="left-[15%] top-[45%] w-[80%] md:left-[28%] md:top-[34%] md:w-[55%]" anim="animate-smoke-c" delay="-40s" />
+      <Plume src="/media/smoke-b.webp" box="hidden md:block md:left-[40%] md:top-[40%] md:w-[45%]" anim="animate-smoke-b" delay="-55s" flip />
     </>
   )
 }
