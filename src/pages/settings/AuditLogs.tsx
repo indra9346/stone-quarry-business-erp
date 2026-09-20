@@ -61,8 +61,8 @@ export default function AuditLogs() {
       <Modal open={open !== null} onOpenChange={(o) => !o && setOpen(null)} size="xl" title={open ? `${open.action} · ${open.module.replace(/_/g, ' ')}` : ''} description={open ? formatDateTime(open.created_at) : undefined}>
         {open && (
           <div className="grid gap-4 md:grid-cols-2">
-            <div><p className="mb-1 text-xs font-semibold uppercase text-stone-500">Before</p><pre className="max-h-96 overflow-auto rounded-md bg-stone-50 p-3 text-xs">{open.previous_values ? JSON.stringify(open.previous_values, null, 2) : '—'}</pre></div>
-            <div><p className="mb-1 text-xs font-semibold uppercase text-stone-500">After</p><pre className="max-h-96 overflow-auto rounded-md bg-stone-50 p-3 text-xs">{open.new_values ? JSON.stringify(open.new_values, null, 2) : '—'}</pre></div>
+            <div className="min-w-0"><p className="mb-1 text-xs font-semibold uppercase text-stone-500">Before</p><pre className="max-h-96 overflow-auto rounded-md bg-stone-50 p-3 text-xs">{open.previous_values ? JSON.stringify(open.previous_values, null, 2) : '—'}</pre></div>
+            <div className="min-w-0"><p className="mb-1 text-xs font-semibold uppercase text-stone-500">After</p><pre className="max-h-96 overflow-auto rounded-md bg-stone-50 p-3 text-xs">{open.new_values ? JSON.stringify(open.new_values, null, 2) : '—'}</pre></div>
           </div>
         )}
       </Modal>
