@@ -1,9 +1,9 @@
 import type { CsvColumn } from './csv'
-import { formatDate } from './format'
+import { formatDate, formatTime } from './format'
 import { billState } from '@/types/db'
-import type { Customer, Expense, LedgerEntry } from '@/types/db'
+import type { Customer, LedgerEntry } from '@/types/db'
 import type { BillRow } from '@/services/bills'
-import type { PaymentRow } from '@/services/finance'
+import type { ExpenseRow, PaymentRow } from '@/services/finance'
 import type { QuotationRow } from '@/services/documents'
 import type { StockRow } from '@/services/operations'
 
@@ -19,6 +19,7 @@ export const billColumns: CsvColumn<BillRow>[] = [
   { header: 'Bill number', value: (b) => b.bill_number },
   { header: 'Type', value: (b) => (b.bill_type === 'ev' ? 'EV' : 'Normal') },
   { header: 'Bill date', value: (b) => d(b.bill_date) },
+  { header: 'Time recorded', value: (b) => formatTime(b.created_at) },
   { header: 'Customer', value: (b) => b.customers?.customer_name },
   { header: 'Party name on bill', value: (b) => b.party_name },
   { header: 'Party GSTIN', value: (b) => b.party_gstin },
@@ -43,6 +44,7 @@ export const billColumns: CsvColumn<BillRow>[] = [
 export const quotationColumns: CsvColumn<QuotationRow>[] = [
   { header: 'Quotation number', value: (q) => q.quotation_number },
   { header: 'Date', value: (q) => d(q.quotation_date) },
+  { header: 'Time recorded', value: (q) => formatTime(q.created_at) },
   { header: 'Valid until', value: (q) => d(q.valid_until) },
   { header: 'Customer', value: (q) => q.customers?.customer_name },
   { header: 'Status', value: (q) => q.status },
@@ -71,6 +73,7 @@ export const customerColumns: CsvColumn<Customer>[] = [
 export const paymentColumns: CsvColumn<PaymentRow>[] = [
   { header: 'Payment number', value: (p) => p.payment_number },
   { header: 'Date', value: (p) => d(p.payment_date) },
+  { header: 'Time recorded', value: (p) => formatTime(p.created_at) },
   { header: 'Customer', value: (p) => p.customers?.customer_name },
   { header: 'Against bill', value: (p) => p.bills?.bill_number },
   { header: 'Amount', value: (p) => p.amount },
@@ -82,6 +85,7 @@ export const paymentColumns: CsvColumn<PaymentRow>[] = [
 export const ledgerColumns: CsvColumn<LedgerEntry>[] = [
   { header: 'Entry no.', value: (e) => e.entry_seq },
   { header: 'Date', value: (e) => d(e.transaction_date) },
+  { header: 'Time recorded', value: (e) => formatTime(e.created_at) },
   { header: 'Type', value: (e) => e.transaction_type },
   { header: 'Description', value: (e) => e.description },
   { header: 'Debit', value: (e) => e.debit },
@@ -89,11 +93,12 @@ export const ledgerColumns: CsvColumn<LedgerEntry>[] = [
   { header: 'Running balance', value: (e) => e.running_balance },
 ]
 
-export const expenseColumns: CsvColumn<Expense>[] = [
+export const expenseColumns: CsvColumn<ExpenseRow>[] = [
   { header: 'Expense number', value: (e) => e.expense_number },
   { header: 'Date', value: (e) => d(e.expense_date) },
   { header: 'Time', value: (e) => e.expense_time?.slice(0, 5) },
   { header: 'Category', value: (e) => e.category },
+  { header: 'Vehicle', value: (e) => e.vehicles?.registration_number },
   { header: 'Amount', value: (e) => e.amount },
   { header: 'Vendor', value: (e) => e.vendor_name },
   { header: 'Description', value: (e) => e.description },

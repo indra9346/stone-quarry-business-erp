@@ -109,23 +109,29 @@ export async function ledgerAdjustment(
 }
 
 /* --------------------------------------------------------------- expenses */
+export interface ExpenseRow extends Expense {
+  vehicles: { registration_number: string } | null
+}
+
 export async function listExpenses(
   c: SupabaseClient,
-  f: { category?: string; from?: string; to?: string; page: number },
-): Promise<Page<Expense>> {
-  let q = c.from('expenses').select('*', { count: 'exact' })
+  f: { category?: string; vehicleId?: string; from?: string; to?: string; page: number },
+): Promise<Page<ExpenseRow>> {
+  let q = c.from('expenses').select('*, vehicles(registration_number)', { count: 'exact' })
   if (f.category) q = q.eq('category', f.category)
+  if (f.vehicleId) q = q.eq('vehicle_id', f.vehicleId)
   if (f.from) q = q.gte('expense_date', f.from)
   if (f.to) q = q.lte('expense_date', f.to)
   const [from, to] = pageRange(f.page)
   const res = await q.order('expense_date', { ascending: false }).order('created_at', { ascending: false }).range(from, to)
   if (res.error) throw new Error(res.error.message)
-  return { rows: (res.data ?? []) as Expense[], total: res.count ?? 0 }
+  return { rows: (res.data ?? []) as ExpenseRow[], total: res.count ?? 0 }
 }
 
 /** Category totals for a date range (fetches only category+amount). */
-export async function expenseSummary(c: SupabaseClient, f: { from?: string; to?: string }) {
+export async function expenseSummary(c: SupabaseClient, f: { from?: string; to?: string; vehicleId?: string }) {
   let q = c.from('expenses').select('category, amount')
+  if (f.vehicleId) q = q.eq('vehicle_id', f.vehicleId)
   if (f.from) q = q.gte('expense_date', f.from)
   if (f.to) q = q.lte('expense_date', f.to)
   const rows = ok(await q.limit(5000)) as { category: string; amount: number }[]

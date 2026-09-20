@@ -12,7 +12,7 @@ import { BillStateBadge, BillTypeBadge, PaymentStatusBadge } from '@/components/
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { BillDocument } from '@/components/documents/documents'
 import RecordPaymentDialog from '@/features/payments/RecordPaymentDialog'
-import { formatDate, formatDateTime, formatPercent } from '@/lib/format'
+import { formatDate, formatDateTime, formatPercent, formatTime } from '@/lib/format'
 import { billState } from '@/types/db'
 import { cn } from '@/lib/utils'
 
@@ -47,7 +47,7 @@ export default function BillDetail() {
       <PageHeader
         title={`${bill.bill_type === 'ev' ? 'EV bill' : 'Normal bill'} ${bill.bill_number}`}
         crumbs={[{ label: 'Bills', to: `/business/${code}/bills` }, { label: bill.bill_number }]}
-        description={`${bill.party_name || bill.customers?.customer_name || '—'} · ${formatDate(bill.bill_date)}`}
+        description={`${bill.party_name || bill.customers?.customer_name || '—'} · ${formatDate(bill.bill_date)} · ${formatTime(bill.created_at)}`}
         actions={
           <>
             {view === 'document' && (

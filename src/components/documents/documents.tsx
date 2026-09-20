@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { formatDate, formatINR, formatPercent, formatQuantity } from '@/lib/format'
+import { formatDate, formatINR, formatPercent, formatQuantity, formatTime } from '@/lib/format'
 import { useBusinessLetterhead } from '@/hooks/useLookups'
 import type { Bill, BillItem, MeasurementRow, MeasurementSheet, Quotation, QuotationItem } from '@/types/db'
 import { billState } from '@/types/db'
@@ -15,7 +15,7 @@ export function DocumentPage({ children, className }: { children: ReactNode; cla
 }
 
 /** Business letterhead — every value comes from the business's own settings. */
-export function DocumentHeader({ title, number, date }: { title: string; number?: string | null; date?: string | null }) {
+export function DocumentHeader({ title, number, date, time }: { title: string; number?: string | null; date?: string | null; time?: string | null }) {
   const lh = useBusinessLetterhead()
   return (
     <header className="border-b-2 border-stone-900 pb-3">
@@ -31,6 +31,7 @@ export function DocumentHeader({ title, number, date }: { title: string; number?
           <p className="text-sm font-bold uppercase tracking-widest">{title}</p>
           {number && <p className="mt-1 text-xs">No. <span className="font-semibold">{number}</span></p>}
           {date && <p className="text-xs">Date: <span className="font-semibold">{formatDate(date)}</span></p>}
+          {time && <p className="text-xs">Time: <span className="font-semibold">{formatTime(time)}</span></p>}
         </div>
       </div>
     </header>
@@ -88,7 +89,7 @@ export function BillDocument({
     <DocumentPage className="relative">
       {state === 'cancelled' && <DocumentStatus label="Cancelled" />}
       {state === 'draft' && <DocumentStatus label="Draft" tone="amber" />}
-      <DocumentHeader title={bill.bill_type === 'ev' ? 'EV Bill' : 'Bill'} number={bill.bill_number} date={bill.bill_date} />
+      <DocumentHeader title={bill.bill_type === 'ev' ? 'EV Bill' : 'Bill'} number={bill.bill_number} date={bill.bill_date} time={bill.created_at} />
 
       <div className="mt-4 grid grid-cols-2 gap-6">
         <div className="space-y-1">
@@ -183,7 +184,7 @@ export function QuotationDocument({
     <DocumentPage className="relative">
       {quotation.status === 'draft' && <DocumentStatus label="Draft" tone="amber" />}
       {quotation.status === 'rejected' && <DocumentStatus label="Rejected" />}
-      <DocumentHeader title="Quotation" number={quotation.quotation_number} date={quotation.quotation_date} />
+      <DocumentHeader title="Quotation" number={quotation.quotation_number} date={quotation.quotation_date} time={quotation.created_at} />
       <div className="mt-4 grid grid-cols-2 gap-6">
         <div className="space-y-1">
           <Kv label="To">{quotation.customers?.customer_name}</Kv>

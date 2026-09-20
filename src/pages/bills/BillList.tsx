@@ -13,7 +13,7 @@ import { Card, CurrencyDisplay, DateRangePicker, FilterBar, PageHeader, SearchBa
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { BillStateBadge, BillTypeBadge, PaymentStatusBadge } from '@/components/ui/StatusBadge'
 import { Select } from '@/components/ui/form'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { BillState, BillType } from '@/types/db'
 
@@ -35,7 +35,7 @@ export default function BillList({ type }: { type?: BillType }) {
   const columns: Column<BillRow>[] = [
     { key: 'number', header: 'Bill no.', sortValue: (b) => b.bill_number, cell: (b) => <span className="font-medium text-stone-900">{b.bill_number}</span> },
     { key: 'type', header: 'Type', cell: (b) => <BillTypeBadge type={b.bill_type} /> },
-    { key: 'date', header: 'Date', sortValue: (b) => b.bill_date, cell: (b) => formatDate(b.bill_date) },
+    { key: 'date', header: 'Date', sortValue: (b) => b.bill_date, cell: (b) => <>{formatDate(b.bill_date)} <span className="ml-1.5 text-xs text-stone-400">{formatTime(b.created_at)}</span></> },
     { key: 'customer', header: 'Customer', sortValue: (b) => b.customers?.customer_name ?? null, cell: (b) => b.party_name || b.customers?.customer_name || '—' },
     { key: 'total', header: 'Total', numeric: true, sortValue: (b) => b.grand_total, cell: (b) => <CurrencyDisplay value={b.grand_total} /> },
     { key: 'balance', header: 'Balance due', numeric: true, sortValue: (b) => b.balance_due, cell: (b) => <CurrencyDisplay value={b.balance_due} /> },

@@ -14,7 +14,7 @@ import { Card, CurrencyDisplay, DateRangePicker, FilterBar, PageHeader, SearchBa
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { QuotationStatusBadge } from '@/components/ui/StatusBadge'
 import { Select } from '@/components/ui/form'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatTime } from '@/lib/format'
 import type { QuotationStatus } from '@/types/db'
 
 export default function QuotationList() {
@@ -34,7 +34,7 @@ export default function QuotationList() {
   const columns: Column<QuotationRow>[] = [
     { key: 'no', header: 'Quotation no.', sortValue: (r) => r.quotation_number, cell: (r) => <span className="font-medium text-stone-900">{r.quotation_number}</span> },
     { key: 'customer', header: 'Customer', sortValue: (r) => r.customers?.customer_name ?? null, cell: (r) => r.customers?.customer_name ?? '—' },
-    { key: 'date', header: 'Date', sortValue: (r) => r.quotation_date, cell: (r) => formatDate(r.quotation_date) },
+    { key: 'date', header: 'Date', sortValue: (r) => r.quotation_date, cell: (r) => <>{formatDate(r.quotation_date)} <span className="ml-1.5 text-xs text-stone-400">{formatTime(r.created_at)}</span></> },
     { key: 'valid', header: 'Valid until', cell: (r) => formatDate(r.valid_until) },
     { key: 'total', header: 'Total', numeric: true, sortValue: (r) => r.grand_total, cell: (r) => <CurrencyDisplay value={r.grand_total} /> },
     { key: 'status', header: 'Status', cell: (r) => <QuotationStatusBadge status={r.status} /> },

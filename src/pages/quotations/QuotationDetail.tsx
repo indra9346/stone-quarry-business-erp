@@ -10,7 +10,7 @@ import { Select } from '@/components/ui/form'
 import { QuotationStatusBadge } from '@/components/ui/StatusBadge'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { QuotationDocument } from '@/components/documents/documents'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatTime } from '@/lib/format'
 import type { QuotationStatus } from '@/types/db'
 
 export default function QuotationDetail() {
@@ -30,7 +30,7 @@ export default function QuotationDetail() {
       <PageHeader
         title={`Quotation ${quotation.quotation_number}`}
         crumbs={[{ label: 'Quotations', to: `/business/${code}/quotations` }, { label: quotation.quotation_number }]}
-        description={`${quotation.customers?.customer_name ?? '—'} · ${formatDate(quotation.quotation_date)}`}
+        description={`${quotation.customers?.customer_name ?? '—'} · ${formatDate(quotation.quotation_date)} · ${formatTime(quotation.created_at)}`}
         actions={
           <>
             <QuotationStatusBadge status={quotation.status} />

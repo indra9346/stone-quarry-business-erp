@@ -7,8 +7,8 @@ import { Link } from 'react-router-dom'
 import { Plus, Wallet } from 'lucide-react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
 import { useBizMutation, useBizQuery } from '@/hooks/useBiz'
-import { useCustomerPicker, usePrefix } from '@/hooks/useLookups'
-import { createExpense, expenseSummary, ledgerAdjustment, listExpenses, listLedger, listPayments, type PaymentRow } from '@/services/finance'
+import { useCustomerPicker, usePrefix, useVehiclePicker } from '@/hooks/useLookups'
+import { createExpense, expenseSummary, ledgerAdjustment, listExpenses, listLedger, listPayments, type ExpenseRow, type PaymentRow } from '@/services/finance'
 import { generateNumber } from '@/services/bills'
 import { PAGE_SIZE } from '@/services/common'
 import { Card, CurrencyDisplay, DateRangePicker, FilterBar, KpiCard, PageHeader } from '@/components/ui/layout'
@@ -19,8 +19,8 @@ import { FormField, Input, Select, Textarea } from '@/components/ui/form'
 import { EmptyState } from '@/components/ui/feedback'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import RecordPaymentDialog from '@/features/payments/RecordPaymentDialog'
-import { formatDate, parseOptionalNumber, todayIST } from '@/lib/format'
-import type { Expense, ExpenseCategory, LedgerEntry, PaymentMode } from '@/types/db'
+import { formatDate, formatTime, parseOptionalNumber, todayIST } from '@/lib/format'
+import type { ExpenseCategory, LedgerEntry, PaymentMode } from '@/types/db'
 
 /* ============================================================== PAYMENTS */
 export function PaymentsPage() {
@@ -35,7 +35,7 @@ export function PaymentsPage() {
   )
   const columns: Column<PaymentRow>[] = [
     { key: 'no', header: 'Payment no.', cell: (p) => <span className="font-medium text-stone-900">{p.payment_number}</span> },
-    { key: 'date', header: 'Date', sortValue: (p) => p.payment_date, cell: (p) => formatDate(p.payment_date) },
+    { key: 'date', header: 'Date', sortValue: (p) => p.payment_date, cell: (p) => <>{formatDate(p.payment_date)} <span className="ml-1.5 text-xs text-stone-400">{formatTime(p.created_at)}</span></> },
     { key: 'cust', header: 'Customer', cell: (p) => <Link className="text-amber-800 hover:underline" to={`/business/${code}/customers/${p.customer_id}`}>{p.customers?.customer_name ?? '—'}</Link> },
     { key: 'bill', header: 'Against bill', cell: (p) => (p.bills ? <Link className="text-amber-800 hover:underline" to={`/business/${code}/bills/${p.bill_id}`}>{p.bills.bill_number}</Link> : <span className="text-stone-500">On account</span>) },
     { key: 'mode', header: 'Mode', cell: (p) => p.payment_mode.replace('_', ' ') },
@@ -95,7 +95,7 @@ export function LedgerPage() {
   const { code } = useBusinessContext()
 
   const columns: Column<LedgerEntry>[] = [
-    { key: 'date', header: 'Date', cell: (e) => formatDate(e.transaction_date) },
+    { key: 'date', header: 'Date', cell: (e) => <>{formatDate(e.transaction_date)} <span className="ml-1.5 text-xs text-stone-400">{formatTime(e.created_at)}</span></> },
     { key: 'type', header: 'Transaction', cell: (e) => <StatusBadge tone={e.transaction_type === 'payment' ? 'success' : e.transaction_type === 'bill' ? 'info' : 'neutral'}>{e.transaction_type.replace('_', ' ')}</StatusBadge> },
     {
       key: 'ref',
@@ -194,16 +194,19 @@ const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
 
 export function ExpensesPage() {
   const [category, setCategory] = useState('')
+  const [vehicleId, setVehicleId] = useState('')
   const [range, setRange] = useState({ from: '', to: '' })
   const [page, setPage] = useState(0)
   const [adding, setAdding] = useState(false)
-  const list = useBizQuery(['expenses', 'list', category, range.from, range.to, page], (c) => listExpenses(c, { category: category || undefined, from: range.from || undefined, to: range.to || undefined, page }))
-  const summary = useBizQuery(['expenses', 'summary', range.from, range.to], (c) => expenseSummary(c, { from: range.from || undefined, to: range.to || undefined }))
+  const vehicles = useVehiclePicker()
+  const list = useBizQuery(['expenses', 'list', category, vehicleId, range.from, range.to, page], (c) => listExpenses(c, { category: category || undefined, vehicleId: vehicleId || undefined, from: range.from || undefined, to: range.to || undefined, page }))
+  const summary = useBizQuery(['expenses', 'summary', vehicleId, range.from, range.to], (c) => expenseSummary(c, { vehicleId: vehicleId || undefined, from: range.from || undefined, to: range.to || undefined }))
 
-  const columns: Column<Expense>[] = [
+  const columns: Column<ExpenseRow>[] = [
     { key: 'no', header: 'Expense no.', cell: (e) => <span className="font-medium text-stone-900">{e.expense_number}</span> },
     { key: 'date', header: 'Date', sortValue: (e) => e.expense_date, cell: (e) => `${formatDate(e.expense_date)}${e.expense_time ? ` ${e.expense_time.slice(0, 5)}` : ''}` },
     { key: 'cat', header: 'Category', cell: (e) => <StatusBadge>{e.category}</StatusBadge> },
+    { key: 'veh', header: 'Vehicle', cell: (e) => e.vehicles?.registration_number ?? '—' },
     { key: 'desc', header: 'Description', wrap: true, cell: (e) => e.description ?? '—' },
     { key: 'vendor', header: 'Vendor', cell: (e) => e.vendor_name ?? '—' },
     { key: 'amt', header: 'Amount', numeric: true, sortValue: (e) => e.amount, cell: (e) => <CurrencyDisplay value={e.amount} className="font-medium" /> },
@@ -213,7 +216,7 @@ export function ExpensesPage() {
       <PageHeader title="Expenses" description="Money the business spends. Not connected to customer payments or to any person by phone number."
         actions={
           <>
-            <ExportCsvButton name="expenses" columns={expenseColumns} load={(c) => fetchAllPages((p) => listExpenses(c, { category: category || undefined, from: range.from || undefined, to: range.to || undefined, page: p }))} />
+            <ExportCsvButton name="expenses" columns={expenseColumns} load={(c) => fetchAllPages((p) => listExpenses(c, { category: category || undefined, vehicleId: vehicleId || undefined, from: range.from || undefined, to: range.to || undefined, page: p }))} />
             <WhenCan module="expenses"><Button variant="accent" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Add expense</Button></WhenCan>
           </>
         } />
@@ -228,6 +231,13 @@ export function ExpensesPage() {
             <Select className="mt-1 w-40" value={category} onChange={(e) => { setCategory(e.target.value); setPage(0) }}>
               <option value="">All</option>
               {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </Select>
+          </label>
+          <label className="block text-xs font-medium text-stone-600">
+            Vehicle
+            <Select className="mt-1 w-44" value={vehicleId} onChange={(e) => { setVehicleId(e.target.value); setPage(0) }}>
+              <option value="">All</option>
+              {(vehicles.data ?? []).map((v) => <option key={v.id} value={v.id}>{v.registration_number}</option>)}
             </Select>
           </label>
           <DateRangePicker from={range.from} to={range.to} onChange={(r) => { setRange(r); setPage(0) }} />
@@ -250,6 +260,8 @@ function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
   const [vendor, setVendor] = useState('')
   const [mode, setMode] = useState<PaymentMode | ''>('')
   const [reference, setReference] = useState('')
+  const [vehicleId, setVehicleId] = useState('')
+  const vehicles = useVehiclePicker()
   const [error, setError] = useState<string | null>(null)
   const save = useBizMutation(
     async (c, i: { amount: number }) => {
@@ -257,10 +269,10 @@ function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
       await createExpense(c, {
         expense_number: number, expense_date: date, expense_time: time || null, category, amount: i.amount,
         description: description.trim() || null, vendor_name: vendor.trim() || null, payment_mode: mode || null,
-        reference_number: reference.trim() || null, vehicle_id: null, trip_id: null, notes: null,
+        reference_number: reference.trim() || null, vehicle_id: vehicleId || null, trip_id: null, notes: null,
       })
     },
-    { invalidate: [['expenses']], onSuccess: () => { setAmount(''); setDescription(''); setVendor(''); setReference(''); onOpenChange(false) } },
+    { invalidate: [['expenses']], onSuccess: () => { setAmount(''); setDescription(''); setVendor(''); setReference(''); setVehicleId(''); onOpenChange(false) } },
   )
   function submit() {
     const n = parseOptionalNumber(amount)
@@ -275,6 +287,7 @@ function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
         <FormField label="Amount (₹)" required>{(p) => <Input {...p} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />}</FormField>
         <FormField label="Date" required>{(p) => <Input {...p} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}</FormField>
         <FormField label="Time">{(p) => <Input {...p} type="time" value={time} onChange={(e) => setTime(e.target.value)} />}</FormField>
+        <FormField label="Vehicle" hint="Optional: choose one when the expense is for a particular vehicle (fuel, repairs, tyres...)." className="sm:col-span-2">{(p) => <Select {...p} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}><option value="">Not for a vehicle</option>{(vehicles.data ?? []).map((v) => <option key={v.id} value={v.id}>{v.registration_number}</option>)}</Select>}</FormField>
         <FormField label="Description" className="sm:col-span-2">{(p) => <Textarea {...p} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />}</FormField>
         <FormField label="Vendor / paid to (name)">{(p) => <Input {...p} value={vendor} onChange={(e) => setVendor(e.target.value)} />}</FormField>
         <FormField label="Payment mode">{(p) => <Select {...p} value={mode} onChange={(e) => setMode(e.target.value as PaymentMode | '')}><option value="">—</option><option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option><option value="upi">UPI</option><option value="cheque">Cheque</option><option value="other">Other</option></Select>}</FormField>

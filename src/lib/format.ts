@@ -66,6 +66,15 @@ export function formatDateTime(value: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? value : dateTime.format(d)
 }
 
+const timeOnly = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
+
+/** A timestamptz -> 'hh:mm am' in the business timezone (the time the record was saved). */
+export function formatTime(value: string | null | undefined): string {
+  if (!value) return EMPTY
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? value : timeOnly.format(d)
+}
+
 const istDate = new Intl.DateTimeFormat('en-CA', {
   year: 'numeric',
   month: '2-digit',

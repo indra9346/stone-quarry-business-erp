@@ -79,8 +79,8 @@ No unit or formula is applied; the screen only shows whether the row amounts add
 Customer → (optional) bill → amount → mode (cash, bank transfer, UPI, cheque, other) →
 reference no. → date. It is recorded once and cannot be edited or deleted.
 
-## Expense (admin only)
-Category, amount, date/time, description, vendor name, payment mode, reference no.
+## Expense (admin, or anyone given Expenses access)
+Category, amount, date/time, **vehicle (optional, for fuel/repairs/tyres etc.)**, description, vendor name, payment mode, reference no. The Expenses page can be filtered by vehicle, and the totals and the CSV export follow that filter.
 
 ## Vehicle / Driver / Trip
 - Vehicle: registration number, type, make/model, assigned driver, capacity, status.
@@ -100,3 +100,6 @@ Bills, quotations, customers, payments, customer ledger, expenses and stock have
 button. It downloads everything matching the filters on screen (all pages) as a file that opens in
 Excel or Google Sheets: money and quantities are plain numbers, dates are DD-MM-YYYY, and a blank
 stays blank. Bills, quotations and measurement sheets also have **Print** and **PDF** on their page.
+
+## Time on documents
+Bills, quotations, payments and ledger entries show the **time they were saved** (India time) next to the date, on the screen, on the printed/PDF document, and in the CSV exports ("Time recorded"). The date is the one you choose; the time is set by the system and cannot be edited.
