@@ -20,7 +20,7 @@ export default function MainBranchHome() {
 
       <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10 sm:px-10">
         <header className="flex animate-rise items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded bg-amber-500 text-sm font-bold text-navy-950">SQ</span>
+          <img src="/favicon-192.png" alt="" width={40} height={40} className="h-10 w-10 rounded-md bg-white" />
           <span className="text-sm font-semibold tracking-wide text-stone-200">StoneQuarryERP</span>
         </header>
 
