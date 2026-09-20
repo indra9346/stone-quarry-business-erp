@@ -36,10 +36,15 @@ export default function BusinessSignIn() {
     e.preventDefault()
     setSubmitting(true)
     setError(null)
-    const { error } = await signIn(email.trim(), password)
+    // Logins are stored in lower case; phones often capitalise the first letter or add a space.
+    const { error } = await signIn(email.trim().toLowerCase(), password)
     setSubmitting(false)
     if (error) {
-      setError(error === 'Invalid login credentials' ? 'Incorrect email or password.' : error)
+      setError(
+        error === 'Invalid login credentials'
+          ? `Incorrect email or password for ${profile.name}. Each business has its own logins and passwords, so use the ones issued for this business.`
+          : error,
+      )
       return
     }
     navigate(`/business/${code}/dashboard`)
@@ -49,11 +54,11 @@ export default function BusinessSignIn() {
     <AuthShell title="Sign in" subtitle="Use the account issued for this business.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField label="Email" required>
-          {(p) => <Input {...p} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
+          {(p) => <Input {...p} type="email" required autoComplete="email" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} />}
         </FormField>
         <FormField label="Password" required>
           {(p) => (
-            <PasswordInput {...p} required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput {...p} required autoComplete="current-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={password} onChange={(e) => setPassword(e.target.value)} />
           )}
         </FormField>
         {error && (

@@ -19,7 +19,7 @@ export default function ForgotPassword() {
     e.preventDefault()
     setBusy(true)
     setError(null)
-    const { error } = await requestPasswordReset(email.trim())
+    const { error } = await requestPasswordReset(email.trim().toLowerCase())
     setBusy(false)
     if (error) setError(error)
     else setSent(true)
@@ -34,7 +34,7 @@ export default function ForgotPassword() {
       ) : (
         <form onSubmit={submit} className="space-y-4">
           <FormField label="Email" required>
-            {(p) => <Input {...p} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
+            {(p) => <Input {...p} type="email" required autoComplete="email" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} />}
           </FormField>
           {error && (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
