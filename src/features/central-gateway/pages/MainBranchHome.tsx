@@ -15,11 +15,11 @@ import { cn } from '@/lib/utils'
  */
 export default function MainBranchHome() {
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <Backdrop image="/media/quarry-gateway.webp" video="quarry-gateway" />
+    <div className="relative min-h-screen overflow-x-clip">
+      <Backdrop className="fixed" image="/media/quarry-gateway.webp" video="quarry-gateway" />
 
-      <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10 sm:px-10">
-        <header className="flex animate-rise items-center gap-3">
+      <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-6 pb-10 sm:px-10">
+        <header className="sticky top-0 z-20 -mx-6 flex animate-rise items-center gap-3 bg-navy-950/55 px-6 py-3 backdrop-blur-md sm:-mx-10 sm:px-10">
           <img src="/favicon-192.png" alt="" width={40} height={40} className="h-10 w-10 rounded-md bg-white" />
           <span className="text-sm font-semibold tracking-wide text-stone-200">StoneQuarryERP</span>
         </header>
