@@ -33,6 +33,10 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
   const existing = useBizQuery(['bills', 'detail', id ?? ''], (c) => getBill(c, id!), { enabled: mode === 'edit' && !!id })
 
   const [type, setType] = useState<BillType>(search.get('type') === 'ev' ? 'ev' : 'normal')
+  const typeParam = search.get('type')
+  useEffect(() => {
+    if (mode === 'create') setType(typeParam === 'ev' ? 'ev' : 'normal')
+  }, [mode, typeParam])
   const [numberMode, setNumberMode] = useState<'manual' | 'generated'>('manual')
   const [number, setNumber] = useState('')
   const [customerId, setCustomerId] = useState('')
