@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // 2. Validate the request.
-  let input: { email?: unknown; password?: unknown; full_name?: unknown; role?: unknown }
+  let input: { email?: unknown; password?: unknown; full_name?: unknown; role?: unknown; permissions?: unknown }
   try {
     input = await req.json()
   } catch {
@@ -66,6 +66,9 @@ Deno.serve(async (req: Request) => {
   if (password.length < 8) return reply(400, { error: 'The password must be at least 8 characters.' })
   if (!fullName) return reply(400, { error: 'Enter the person’s name.' })
   if (!role) return reply(400, { error: 'Choose a role.' })
+  // Optional per-person access; the database validates the keys and levels (013).
+  const permissions =
+    input.permissions && typeof input.permissions === 'object' && !Array.isArray(input.permissions) ? input.permissions : null
 
   // 3. Create the login, then its role row.
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
@@ -88,7 +91,7 @@ Deno.serve(async (req: Request) => {
   // solely for the auth admin API above.
   const { error: profileError } = await asCaller
     .from('staff_profiles')
-    .insert({ user_id: created.user.id, full_name: fullName, role, status: 'active' })
+    .insert({ user_id: created.user.id, full_name: fullName, role, status: 'active', ...(permissions ? { permissions } : {}) })
   if (profileError) {
     await admin.auth.admin.deleteUser(created.user.id)
     return reply(500, { error: 'The login could not be given access, so it was not created. ' + profileError.message })

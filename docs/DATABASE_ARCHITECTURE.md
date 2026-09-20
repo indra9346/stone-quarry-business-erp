@@ -35,6 +35,7 @@ tables in the first place.
 | `010_rls_policies.sql` | table privileges (column-level for bills/stock) + RLS policies | Enforcement layer |
 | `011_measurement_sheets.sql` | `measurement_sheets`, `measurement_sheet_rows`, view `measurement_sheet_verification` | Independent measurement documents, stored verbatim |
 | `012_audit_triggers.sql` | audit triggers on every operational table | Audit trail |
+| `013_permissions.sql` | optional per-person access (`staff_profiles.permissions`: none / view / edit per module) enforced in RLS and the definer functions; role defaults unchanged | Per-person access |
 
 21 tables. Every foreign key targets a table in the same business database.
 There is no `business_id` column anywhere, and no operational table in the

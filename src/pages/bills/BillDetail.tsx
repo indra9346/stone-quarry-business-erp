@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils'
 
 export default function BillDetail() {
   const { id } = useParams()
-  const { code, isAdmin } = useBusinessContext()
+  const { code, isAdmin, can } = useBusinessContext()
   const navigate = useNavigate()
   const [view, setView] = useState<'details' | 'document'>('details')
   const [dialog, setDialog] = useState<'post' | 'cancel' | 'delete' | 'pay' | null>(null)
@@ -38,7 +38,8 @@ export default function BillDetail() {
   const { bill, items, payments } = query.data
   const state = billState(bill)
   const isDraft = state === 'draft'
-  const canPay = state === 'posted' && bill.balance_due > 0
+  const canEditBill = can('bills', 'edit')
+  const canPay = state === 'posted' && bill.balance_due > 0 && can('payments', 'edit')
   const canCancel = isAdmin && state !== 'cancelled' && bill.amount_received === 0
 
   return (
@@ -55,14 +56,14 @@ export default function BillDetail() {
                 <PDFButton />
               </>
             )}
-            {isDraft && (
+            {isDraft && canEditBill && (
               <Link to={`/business/${code}/bills/${bill.id}/edit`}>
                 <Button>
                   <Pencil className="h-4 w-4" /> Edit
                 </Button>
               </Link>
             )}
-            {isDraft && (
+            {isDraft && canEditBill && (
               <Button variant="accent" onClick={() => { setActionError(null); setDialog('post') }}>
                 <CheckCircle2 className="h-4 w-4" /> Post to ledger
               </Button>

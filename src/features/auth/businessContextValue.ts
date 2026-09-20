@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react'
 import type { Session, SupabaseClient } from '@supabase/supabase-js'
 import type { BusinessCode, BusinessProfile } from '@/types/business'
 import type { StaffRole } from '@/types/db'
+import type { ModuleId, PermissionLevel, Permissions } from '@/lib/permissions'
 
 /**
  * Where the visitor stands relative to ONE business portal:
@@ -27,6 +28,10 @@ export interface BusinessContextValue {
   fullName: string | null
   role: StaffRole | null
   isAdmin: boolean
+  /** Per-person overrides set by an admin (null = role defaults). */
+  permissions: Permissions | null
+  /** Does this person have at least `need` access to a module? (Menu/route/button UX; the database enforces it.) */
+  can: (module: ModuleId, need?: PermissionLevel) => boolean
   /** True while the user is completing a password-reset link. */
   recovery: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>

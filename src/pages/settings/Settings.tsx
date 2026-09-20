@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
 import { useBizMutation, useBizQuery } from '@/hooks/useBiz'
 import { useSettings, useUnits } from '@/hooks/useLookups'
-import { createStaffLogin, createStaffProfile, createUnit, listStaff, saveSetting, updateStaff } from '@/services/catalog'
+import { COMMON_QUARRY_UNITS } from '@/config/quarryUnits'
+import { createStaffLogin, createStaffProfile, createUnit, createUnits, updateUnit, listStaff, saveSetting, updateStaff } from '@/services/catalog'
 import { listStock } from '@/services/operations'
 import { Card, CardHeader, PageHeader } from '@/components/ui/layout'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
 import { PasswordInput } from '@/components/ui/PasswordInput'
+import { Modal } from '@/components/ui/Dialog'
+import { PermissionGrid, type PermissionValue } from './PermissionGrid'
+import { compactPermissions, effectivePermissions, LEVEL_LABEL, PERMISSION_MODULES, type PermissionLevel } from '@/lib/permissions'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
@@ -170,35 +174,100 @@ function BillingTab() {
   )
 }
 
+const KIND_LABEL: Record<Unit['measurement_kind'], string> = { other: 'Other', count: 'Count', area: 'Area', volume: 'Volume', weight: 'Weight' }
+
 function StockTab() {
   const units = useUnits()
   const [code, setCode] = useState('')
   const [label, setLabel] = useState('')
   const [kind, setKind] = useState<Unit['measurement_kind']>('other')
+  const [editingCode, setEditingCode] = useState<string | null>(null)
+  const [picked, setPicked] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
-  const add = useBizMutation(createUnit, { invalidate: [['units']], onSuccess: () => { setCode(''); setLabel('') } })
+  const [note, setNote] = useState<string | null>(null)
+  const add = useBizMutation(createUnit, { invalidate: [['units']], onSuccess: () => { setCode(''); setLabel(''); setKind('other') } })
+  const save = useBizMutation((c, v: { code: string; label: string; kind: Unit['measurement_kind'] }) => updateUnit(c, v.code, { label: v.label, measurement_kind: v.kind }), {
+    invalidate: [['units']],
+    onSuccess: () => { setEditingCode(null); setCode(''); setLabel(''); setKind('other') },
+  })
+  const addMany = useBizMutation(createUnits, { invalidate: [['units']], onSuccess: (_d, v) => { setPicked(new Set()); setNote(`Added ${v.length} unit${v.length === 1 ? '' : 's'}.`) } })
+
+  const existing = new Set((units.data ?? []).map((u) => u.code.toLowerCase()))
+  const available = COMMON_QUARRY_UNITS.filter((u) => !existing.has(u.code.toLowerCase()))
+
   const columns: Column<Unit>[] = [
-    { key: 'c', header: 'Code', cell: (u) => u.code },
+    { key: 'c', header: 'Code', cell: (u) => <span className="font-medium text-stone-900">{u.code}</span> },
     { key: 'l', header: 'Label', cell: (u) => u.label },
-    { key: 'k', header: 'Kind', cell: (u) => u.measurement_kind },
+    { key: 'k', header: 'Kind', cell: (u) => KIND_LABEL[u.measurement_kind] },
+    { key: 'e', header: '', cell: (u) => (
+      <Button size="sm" onClick={() => { setEditingCode(u.code); setCode(u.code); setLabel(u.label); setKind(u.measurement_kind); setError(null); setNote(null) }}>Edit</Button>
+    ) },
   ]
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader title="Units" description="Units the business measures in. None is preset — add only what you actually use. A unit is always optional on a line or stock item." />
+        <CardHeader title="Units" description="Units the business measures in. Code is the short form printed next to quantities (kg, t, m3); Label is the full name. A unit is always optional on a line or stock item." />
         <DataTable dense columns={columns} rows={units.data} rowKey={(u) => u.code} loading={units.isLoading} error={units.error} empty={{ title: 'No units defined yet' }} />
-        <div className="grid gap-3 border-t border-stone-100 p-5 sm:grid-cols-4 sm:items-end">
-          <FormField label="Code">{(p) => <Input {...p} value={code} onChange={(e) => setCode(e.target.value)} />}</FormField>
-          <FormField label="Label">{(p) => <Input {...p} value={label} onChange={(e) => setLabel(e.target.value)} />}</FormField>
-          <FormField label="Kind">{(p) => <Select {...p} value={kind} onChange={(e) => setKind(e.target.value as Unit['measurement_kind'])}><option value="other">Other</option><option value="count">Count</option><option value="area">Area</option><option value="volume">Volume</option><option value="weight">Weight</option></Select>}</FormField>
-          <Button variant="primary" loading={add.isPending} onClick={() => {
+        <form
+          className="grid gap-3 border-t border-stone-100 p-5 sm:grid-cols-4 sm:items-end"
+          onSubmit={(e) => {
+            e.preventDefault()
             if (!code.trim() || !label.trim()) return setError('Code and label are required.')
             setError(null)
-            add.mutate({ code: code.trim(), label: label.trim(), measurement_kind: kind }, { onError: (e) => setError(e.message) })
-          }}>Add unit</Button>
-        </div>
+            setNote(null)
+            if (editingCode) save.mutate({ code: editingCode, label: label.trim(), kind }, { onError: (er) => setError(er.message) })
+            else add.mutate({ code: code.trim(), label: label.trim(), measurement_kind: kind }, { onError: (er) => setError(er.message) })
+          }}
+        >
+          <FormField label="Code" hint={editingCode ? 'The code cannot be changed once created.' : 'Short, e.g. kg, t, m3'}>
+            {(p) => <Input {...p} value={code} disabled={!!editingCode} onChange={(e) => setCode(e.target.value)} />}
+          </FormField>
+          <FormField label="Label" hint="Full name, e.g. Cubic metre">{(p) => <Input {...p} value={label} onChange={(e) => setLabel(e.target.value)} />}</FormField>
+          <FormField label="Kind">{(p) => <Select {...p} value={kind} onChange={(e) => setKind(e.target.value as Unit['measurement_kind'])}>{Object.entries(KIND_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select>}</FormField>
+          <div className="flex gap-2">
+            <Button type="submit" variant="primary" loading={add.isPending || save.isPending}>{editingCode ? 'Save changes' : 'Add unit'}</Button>
+            {editingCode && <Button type="button" onClick={() => { setEditingCode(null); setCode(''); setLabel(''); setKind('other'); setError(null) }}>Cancel</Button>}
+          </div>
+        </form>
         {error && <p className="px-5 pb-4 text-sm text-red-700" role="alert">{error}</p>}
+        {note && <p className="px-5 pb-4 text-sm text-emerald-700" role="status">{note}</p>}
       </Card>
+
+      <Card>
+        <CardHeader title="Common quarry units" description="Tick the ones this business uses and add them in one go. Units are only a label: nothing is converted between them." />
+        {available.length === 0 ? (
+          <p className="p-5 text-sm text-stone-600">Every common unit is already in your list.</p>
+        ) : (
+          <div className="p-5">
+            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {available.map((u) => (
+                <li key={u.code}>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md px-3 py-2 ring-1 ring-stone-200 hover:bg-stone-50">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={picked.has(u.code)}
+                      onChange={(e) => setPicked((prev) => { const n = new Set(prev); if (e.target.checked) n.add(u.code); else n.delete(u.code); return n })}
+                    />
+                    <span className="text-sm">
+                      <span className="font-medium text-stone-900">{u.label}</span>
+                      <span className="block text-xs text-stone-500">{u.code} · {KIND_LABEL[u.measurement_kind]}</span>
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="primary" disabled={picked.size === 0} loading={addMany.isPending} onClick={() => { setError(null); setNote(null); addMany.mutate(available.filter((u) => picked.has(u.code)), { onError: (er) => setError(er.message) }) }}>
+                Add {picked.size || ''} selected unit{picked.size === 1 ? '' : 's'}
+              </Button>
+              <Button onClick={() => setPicked(new Set(available.map((u) => u.code)))}>Select all</Button>
+              {picked.size > 0 && <Button onClick={() => setPicked(new Set())}>Clear</Button>}
+            </div>
+          </div>
+        )}
+      </Card>
+
       <Card>
         <CardHeader title="Stock rules" description="Enforced by the database." />
         <ul className="list-disc space-y-2 p-5 pl-9 text-sm text-stone-700">
@@ -211,10 +280,17 @@ function StockTab() {
   )
 }
 
+function accessSummary(s: StaffProfile): string {
+  if (s.role === 'admin') return 'Everything'
+  const eff = effectivePermissions('staff', s.permissions)
+  const parts = PERMISSION_MODULES.filter((m) => eff[m.id] !== m.staffDefault).map((m) => `${m.label}: ${LEVEL_LABEL[eff[m.id]].toLowerCase()}`)
+  return parts.length ? parts.join(' · ') : 'Standard staff access'
+}
+
 function UsersTab() {
   const { userId } = useBusinessContext()
   const query = useBizQuery(['staff', 'list'], listStaff)
-  const update = useBizMutation((c, v: { id: string; patch: Partial<Pick<StaffProfile, 'role' | 'status'>> }) => updateStaff(c, v.id, v.patch), { invalidate: [['staff']] })
+  const update = useBizMutation((c, v: { id: string; patch: Partial<Pick<StaffProfile, 'role' | 'status' | 'permissions'>> }) => updateStaff(c, v.id, v.patch), { invalidate: [['staff']] })
   const create = useBizMutation(createStaffProfile, { invalidate: [['staff']], onSuccess: () => { setId(''); setName('') } })
   const [id, setId] = useState('')
   const [name, setName] = useState('')
@@ -223,12 +299,21 @@ function UsersTab() {
   const [lPassword, setLPassword] = useState('')
   const [lName, setLName] = useState('')
   const [lRole, setLRole] = useState<'admin' | 'staff'>('staff')
+  const [lAccess, setLAccess] = useState<PermissionValue>(() => effectivePermissions('staff', null))
   const [lDone, setLDone] = useState<string | null>(null)
+  const [editing, setEditing] = useState<StaffProfile | null>(null)
+  const [draft, setDraft] = useState<PermissionValue>(() => effectivePermissions('staff', null))
+  const [error, setError] = useState<string | null>(null)
   const login = useBizMutation(createStaffLogin, {
     invalidate: [['staff']],
-    onSuccess: () => { setLDone(`Login created for ${lEmail.trim()}. Share the email and password with them privately.`); setLEmail(''); setLPassword(''); setLName('') },
+    onSuccess: () => { setLDone(`Login created for ${lEmail.trim()}. Share the email and password with them privately.`); setLEmail(''); setLPassword(''); setLName(''); setLAccess(effectivePermissions('staff', null)) },
   })
-  const [error, setError] = useState<string | null>(null)
+
+  function openAccess(s: StaffProfile) {
+    setEditing(s)
+    setDraft(effectivePermissions('staff', s.permissions))
+    setError(null)
+  }
 
   const columns: Column<StaffProfile>[] = [
     { key: 'n', header: 'Name', cell: (s) => <span className="font-medium text-stone-900">{s.full_name}{s.user_id === userId ? ' (you)' : ''}</span> },
@@ -236,6 +321,11 @@ function UsersTab() {
       <Select aria-label={`Role for ${s.full_name}`} className="w-28" value={s.role} disabled={s.user_id === userId} onChange={(e) => update.mutate({ id: s.user_id, patch: { role: e.target.value as 'admin' | 'staff' } }, { onError: (er) => setError(er.message) })}>
         <option value="admin">Admin</option><option value="staff">Staff</option>
       </Select>) },
+    { key: 'a', header: 'Access', cell: (s) => (
+      <div className="flex items-center gap-3">
+        <span className="max-w-xs text-xs text-stone-600">{accessSummary(s)}</span>
+        {s.role === 'staff' && <Button size="sm" onClick={() => openAccess(s)}>Edit access</Button>}
+      </div>) },
     { key: 's', header: 'Status', cell: (s) => (
       <Button size="sm" disabled={s.user_id === userId} onClick={() => update.mutate({ id: s.user_id, patch: { status: s.status === 'active' ? 'inactive' : 'active' } }, { onError: (er) => setError(er.message) })}>
         <StatusBadge tone={s.status === 'active' ? 'success' : 'neutral'}>{s.status}</StatusBadge> {s.status === 'active' ? 'Deactivate' : 'Activate'}
@@ -244,10 +334,11 @@ function UsersTab() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader title="Staff" description="Deactivating a user blocks their access to this business immediately." />
+        <CardHeader title="Staff" description="Deactivating a user blocks their access to this business immediately. “Edit access” sets what one person can see and change." />
         <DataTable dense columns={columns} rows={query.data} rowKey={(s) => s.user_id} loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()} empty={{ title: 'No staff profiles' }} />
         {error && <p className="px-5 pb-4 text-sm text-red-700" role="alert">{error}</p>}
       </Card>
+
       <Card>
         <CardHeader title="Add a staff login" description="Creates the sign-in and gives it access to THIS business only. You choose the password and pass it to them; they can change it later with “Forgot password”." />
         <form
@@ -258,19 +349,27 @@ function UsersTab() {
             if (!lName.trim()) return setError("Enter the person's name.")
             if (lPassword.length < 8) return setError('The password must be at least 8 characters.')
             setError(null)
-            login.mutate({ email: lEmail.trim(), password: lPassword, full_name: lName.trim(), role: lRole }, { onError: (er) => setError(er.message) })
+            login.mutate(
+              { email: lEmail.trim(), password: lPassword, full_name: lName.trim(), role: lRole, permissions: lRole === 'staff' ? compactPermissions(lAccess) : null },
+              { onError: (er) => setError(er.message) },
+            )
           }}
         >
           <FormField label="Full name" required>{(p) => <Input {...p} required value={lName} onChange={(e) => setLName(e.target.value)} />}</FormField>
           <FormField label="Email" required>{(p) => <Input {...p} type="email" required autoComplete="off" value={lEmail} onChange={(e) => setLEmail(e.target.value)} />}</FormField>
           <FormField label="Password" required hint="At least 8 characters.">{(p) => <PasswordInput {...p} required autoComplete="new-password" value={lPassword} onChange={(e) => setLPassword(e.target.value)} />}</FormField>
-          <FormField label="Role">{(p) => <Select {...p} value={lRole} onChange={(e) => setLRole(e.target.value as 'admin' | 'staff')}><option value="staff">Staff</option><option value="admin">Admin</option></Select>}</FormField>
+          <FormField label="Role">{(p) => <Select {...p} value={lRole} onChange={(e) => { const r = e.target.value as 'admin' | 'staff'; setLRole(r); setLAccess(effectivePermissions('staff', null)) }}><option value="staff">Staff</option><option value="admin">Admin</option></Select>}</FormField>
+          <div className="sm:col-span-2">
+            <p className="mb-2 text-sm font-medium text-stone-800">{lRole === 'admin' ? 'What an admin can do' : 'What this person can do — change anything that does not fit their job'}</p>
+            <PermissionGrid role={lRole} value={lAccess} onChange={setLAccess} />
+          </div>
           <div className="sm:col-span-2">
             <Button type="submit" variant="primary" loading={login.isPending}>Create login</Button>
             {lDone && <p className="mt-3 text-sm text-emerald-700" role="status">{lDone}</p>}
           </div>
         </form>
       </Card>
+
       <Card>
         <CardHeader title="Grant access to an existing login" description="For a login you already created in Supabase → Authentication → Users for THIS business's project: paste their User ID here." />
         <div className="grid gap-3 p-5 sm:grid-cols-4 sm:items-end">
@@ -281,32 +380,83 @@ function UsersTab() {
             if (!/^[0-9a-f-]{36}$/i.test(id.trim())) return setError('Enter the user\'s UUID.')
             if (!name.trim()) return setError('Enter the person\'s name.')
             setError(null)
-            create.mutate({ user_id: id.trim(), full_name: name.trim(), role, phone: null }, { onError: (e) => setError(e.message) })
+            create.mutate({ user_id: id.trim(), full_name: name.trim(), role, phone: null, permissions: null }, { onError: (e) => setError(e.message) })
           }}>Grant access</Button>
         </div>
       </Card>
+
+      <Modal
+        open={!!editing}
+        onOpenChange={(o) => { if (!o) setEditing(null) }}
+        title={editing ? `Access for ${editing.full_name}` : 'Access'}
+        description="Choose what this person can see and change. Anything left at the standard setting follows the role default."
+        size="lg"
+        footer={
+          <>
+            <Button onClick={() => setDraft(effectivePermissions('staff', null))}>Reset to standard</Button>
+            <Button onClick={() => setEditing(null)}>Cancel</Button>
+            <Button
+              variant="primary"
+              loading={update.isPending}
+              onClick={() => {
+                if (!editing) return
+                update.mutate({ id: editing.user_id, patch: { permissions: compactPermissions(draft) } }, {
+                  onSuccess: () => setEditing(null),
+                  onError: (er) => setError(er.message),
+                })
+              }}
+            >
+              Save access
+            </Button>
+          </>
+        }
+      >
+        <PermissionGrid role="staff" value={draft} onChange={setDraft} />
+      </Modal>
     </div>
   )
 }
 
 function PermissionsTab() {
-  const rows: [string, string, string][] = [
-    ['Dashboard, Bills (EV & Normal), Quotations, Measurements, Customers, Payments', 'Yes', 'Yes'],
-    ['Stock / raw material, Vehicles, Drivers, Trips', 'Yes', 'Yes'],
-    ['Customer ledger', 'Yes', 'No'],
-    ['Expenses', 'Yes', 'No'],
-    ['Reports', 'Yes', 'No'],
-    ['Settings & user management', 'Yes', 'No'],
-    ['Audit logs (read-only)', 'Yes', 'No'],
-    ['Cancel a bill · delete a draft bill · ledger adjustments', 'Yes', 'No'],
-  ]
+  const groups = ['Sales', 'Inventory', 'Transport', 'Finance'] as const
+  const cell = (lvl: PermissionLevel) => (
+    <span className={cn('rounded px-2 py-0.5 text-xs font-medium', lvl === 'edit' ? 'bg-emerald-50 text-emerald-800' : lvl === 'view' ? 'bg-amber-50 text-amber-800' : 'bg-stone-100 text-stone-600')}>
+      {LEVEL_LABEL[lvl]}
+    </span>
+  )
   return (
     <Card>
-      <CardHeader title="Role permissions" description="Enforced by the database (row-level security and column privileges), not just by the menu. Shown here for reference; they cannot be changed from the browser." />
+      <CardHeader title="Role permissions" description="What each role gets by default. Enforced by the database (row-level security), not just the menu. To change ONE person, use “Edit access” under Users / staff." />
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[480px] text-sm">
-          <thead><tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-stone-500"><th className="px-5 py-2.5">Area</th><th className="px-3 py-2.5">Admin</th><th className="px-3 py-2.5">Staff</th></tr></thead>
-          <tbody>{rows.map(([a, ad, st]) => <tr key={a} className="border-t border-stone-100"><td className="px-5 py-2.5">{a}</td><td className="px-3 py-2.5"><StatusBadge tone={ad === 'Yes' ? 'success' : 'neutral'}>{ad}</StatusBadge></td><td className="px-3 py-2.5"><StatusBadge tone={st === 'Yes' ? 'success' : 'neutral'}>{st}</StatusBadge></td></tr>)}</tbody>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-500">
+              <th className="px-5 py-2 font-medium">Area</th>
+              <th className="px-3 py-2 font-medium">Admin</th>
+              <th className="px-3 py-2 font-medium">Staff (default)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.flatMap((g) =>
+              PERMISSION_MODULES.filter((m) => m.group === g).map((m) => (
+                <tr key={m.id} className="border-b border-stone-100">
+                  <td className="px-5 py-2.5 text-stone-800">{m.label} <span className="text-xs text-stone-400">· {g}</span></td>
+                  <td className="px-3 py-2.5">{cell(m.levels.includes('edit') ? 'edit' : 'view')}</td>
+                  <td className="px-3 py-2.5">{cell(m.staffDefault)}</td>
+                </tr>
+              )),
+            )}
+            <tr className="border-b border-stone-100">
+              <td className="px-5 py-2.5 text-stone-800">Settings, staff management, audit logs</td>
+              <td className="px-3 py-2.5">{cell('edit')}</td>
+              <td className="px-3 py-2.5">{cell('none')}</td>
+            </tr>
+            <tr>
+              <td className="px-5 py-2.5 text-stone-800">Cancel a bill · delete a draft bill · ledger adjustments</td>
+              <td className="px-3 py-2.5">{cell('edit')}</td>
+              <td className="px-3 py-2.5">{cell('none')}</td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </Card>

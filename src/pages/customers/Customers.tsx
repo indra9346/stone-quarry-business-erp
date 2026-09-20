@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import { ExportCsvButton } from '@/components/ui/ExportCsvButton'
+import { fetchAllPages } from '@/lib/csv'
+import { customerColumns } from '@/lib/exportColumns'
+import { WhenCan } from '@/features/auth/WhenCan'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Pencil, Plus, Wallet } from 'lucide-react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
@@ -120,7 +124,12 @@ export function CustomerList() {
     <div>
       <PageHeader
         title="Customers"
-        actions={<Button variant="accent" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Add customer</Button>}
+        actions={
+          <>
+            <ExportCsvButton name="customers" columns={customerColumns} load={(c) => fetchAllPages((p) => listCustomers(c, { q: dq, page: p }))} />
+            <WhenCan module="customers"><Button variant="accent" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Add customer</Button></WhenCan>
+          </>
+        }
       />
       <Card>
         <FilterBar>
@@ -145,14 +154,14 @@ export function CustomerList() {
 
 export function CustomerDetail() {
   const { id } = useParams()
-  const { code, isAdmin } = useBusinessContext()
+  const { code, can } = useBusinessContext()
   const [editing, setEditing] = useState(false)
   const [paying, setPaying] = useState(false)
   const customer = useBizQuery(['customers', 'detail', id ?? ''], (c) => getCustomer(c, id!), { enabled: !!id })
   const bills = useBizQuery(['customers', 'bills', id ?? ''], (c) => listBills(c, { customerId: id, page: 0 }), { enabled: !!id })
   const quotes = useBizQuery(['customers', 'quotes', id ?? ''], (c) => listQuotations(c, { customerId: id, page: 0 }), { enabled: !!id })
   const pays = useBizQuery(['customers', 'payments', id ?? ''], (c) => listPayments(c, { customerId: id, page: 0 }), { enabled: !!id })
-  const balance = useBizQuery(['ledger', 'balance', id ?? ''], (c) => ledgerBalance(c, id!), { enabled: !!id && isAdmin })
+  const balance = useBizQuery(['ledger', 'balance', id ?? ''], (c) => ledgerBalance(c, id!), { enabled: !!id && can('ledger') })
 
   if (customer.isLoading) return <Skeleton className="h-96" />
   if (customer.error) return <ErrorState error={customer.error} onRetry={() => void customer.refetch()} />
@@ -170,13 +179,13 @@ export function CustomerDetail() {
         description={[c.company_name, c.city].filter(Boolean).join(' · ') || undefined}
         actions={
           <>
-            <Button onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /> Edit</Button>
-            <Button variant="primary" onClick={() => setPaying(true)}><Wallet className="h-4 w-4" /> Record payment</Button>
+            <WhenCan module="customers"><Button onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /> Edit</Button></WhenCan>
+            <WhenCan module="payments"><Button variant="primary" onClick={() => setPaying(true)}><Wallet className="h-4 w-4" /> Record payment</Button></WhenCan>
           </>
         }
       />
       <div className="grid gap-4 sm:grid-cols-3">
-        {isAdmin ? (
+        {can('ledger') ? (
           <KpiCard label="Outstanding (ledger)" tone={balance.data && balance.data > 0 ? 'warning' : 'default'} loading={balance.isLoading} value={<CurrencyDisplay value={balance.data} />} hint="Latest running balance on the customer ledger" />
         ) : (
           <KpiCard label="Due on recent posted bills" loading={bills.isLoading} value={<CurrencyDisplay value={dueOnBills} />} hint="From the most recent bills" />

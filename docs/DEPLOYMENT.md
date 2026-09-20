@@ -41,6 +41,21 @@ types of each project: 21 tables, 2 views, the same functions).
   `.deploy/business-template`: `npx supabase link --project-ref <ref>` and
   `npx supabase db push`.
 
+## Per-person access (migration 013) — apply BEFORE using "Edit access"
+An admin can limit or widen what one person can do (None / View / Edit per module). It is
+enforced by the database, and people with no custom setting keep the old role defaults. Apply
+it to each project once (the app keeps working, on role defaults, until you do):
+
+```
+node supabase/deploy/prepare.mjs business-template
+cd .deploy/business-template
+npx supabase link --project-ref <project-ref>
+npx supabase db push
+```
+
+`db push` applies only the new migration. Then redeploy the `create-staff` function (below) so the
+"Add a staff login" form can save the access you choose.
+
 ## Adding staff from the app (Settings → Users / staff → Add a staff login)
 Creating a login needs the project's private service key, so it runs as a small
 Edge Function, `supabase/functions/create-staff`, deployed **once per project**

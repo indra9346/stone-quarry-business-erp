@@ -79,9 +79,9 @@ const mrd = new PGlite()
 await migrate(central, 'central')
 ok('central migrations apply (001, 002)')
 await migrate(kmg, 'business-template')
-ok('KMG business-template migrations apply (001-012)')
+ok('KMG business-template migrations apply (001-013)')
 await migrate(mrd, 'business-template')
-ok('Murudeshwara business-template migrations apply (001-012)')
+ok('Murudeshwara business-template migrations apply (001-013)')
 const db = kmg
 
 // ---------------------------------------------------------------------------
@@ -527,7 +527,7 @@ await fails(db, 'anon cannot call next_document_number', `select next_document_n
 console.log('\n== Function privileges ==')
 await asOwner(db)
 const fns = await rows(db, `select p.oid, p.proname, pg_get_function_identity_arguments(p.oid) args, p.prosecdef secdef, p.proconfig from pg_proc p where p.pronamespace='public'::regnamespace and p.prokind='f'`)
-const clientFns = new Set(['apply_stock_movement','next_document_number','post_bill_to_ledger','record_payment','cancel_bill','record_ledger_adjustment','current_role_is','is_active_staff'])
+const clientFns = new Set(['apply_stock_movement','next_document_number','post_bill_to_ledger','record_payment','cancel_bill','record_ledger_adjustment','current_role_is','is_active_staff','can_access','can_access_any','permissions_valid'])
 for (const f of fns) {
   const anon = (await one(db, `select has_function_privilege('anon', $1::oid, 'execute') x`, [f.oid])).x
   const auth = (await one(db, `select has_function_privilege('authenticated', $1::oid, 'execute') x`, [f.oid])).x
@@ -539,6 +539,81 @@ for (const f of fns) {
 const definers = fns.filter((f) => f.secdef)
 check('every SECURITY DEFINER function pins search_path with pg_catalog first', definers.every((f) => (f.proconfig ?? []).some((c) => c.startsWith('search_path=pg_catalog'))),
   definers.filter((f) => !(f.proconfig ?? []).some((c) => c.startsWith('search_path=pg_catalog'))).map((f) => f.proname).join(','))
+
+// ---------------------------------------------------------------------------
+console.log('\n== Per-person permissions (013) ==')
+const setPerm = async (uid, perm) => {
+  await asUser(db, ADMIN)
+  await db.query(`update staff_profiles set permissions = $1::jsonb where user_id = $2`, [perm === null ? null : JSON.stringify(perm), uid])
+}
+const count = async (t) => (await rows(db, `select 1 from ${t}`)).length
+
+await asUser(db, ADMIN)
+await fails(db, 'permission value other than none/view/edit is rejected', `update staff_profiles set permissions='{"bills":"write"}' where user_id='${STAFF}'`, /staff_permissions_valid|check/i)
+await fails(db, 'unknown module in permissions is rejected', `update staff_profiles set permissions='{"payroll":"edit"}' where user_id='${STAFF}'`, /staff_permissions_valid|check/i)
+await fails(db, 'permissions that are not a JSON object are rejected', `update staff_profiles set permissions='["bills"]' where user_id='${STAFF}'`, /staff_permissions_valid|check/i)
+
+// 1. Role default (permissions NULL) = behaviour before 013.
+await setPerm(STAFF, null)
+await asUser(db, STAFF)
+check('default staff: reads customers and bills', (await count('customers')) > 0 && (await count('bills')) > 0)
+eq('default staff: still cannot read the ledger', await count('customer_ledger'), 0)
+eq('default staff: still cannot read expenses', await count('expenses'), 0)
+
+// 2. Customers view-only, no bills/payments/ledger.
+await setPerm(STAFF, { customers: 'view', bills: 'none', payments: 'none', ledger: 'none', quotations: 'none', measurements: 'none', trips: 'none' })
+await asUser(db, STAFF)
+check('customers=view: can read customers', (await count('customers')) > 0)
+await fails(db, 'customers=view: cannot add a customer', `insert into customers (customer_name) values ('Blocked')`, /row-level security/)
+eq('customers=view: cannot edit a customer (0 rows)', (await db.query(`update customers set notes='x'`)).affectedRows, 0)
+eq('bills=none: cannot read bills', await count('bills'), 0)
+await fails(db, 'bills=none: cannot create a bill', `insert into bills (bill_type,bill_number,bill_number_source,customer_id) values ('normal','PERM-1','manual',$1)`, /row-level security/, [customerId])
+await fails(db, 'payments=none: cannot record a payment (function)', `select record_payment($1,$2,100,'cash')`, /Not authorized to record payments/, [customerId, billId])
+await fails(db, 'bills=none: cannot post a bill (function)', `select post_bill_to_ledger($1)`, /Not authorized to post bills/, [billId])
+eq('payments=none: cannot read payments', await count('payments'), 0)
+
+// 3. Bills view-only.
+await setPerm(STAFF, { bills: 'view', payments: 'none', ledger: 'none' })
+await asUser(db, STAFF)
+check('bills=view: can read bills', (await count('bills')) > 0)
+eq('bills=view: cannot edit a bill (0 rows)', (await db.query(`update bills set notes='x'`)).affectedRows, 0)
+await fails(db, 'bills=view: cannot create a bill', `insert into bills (bill_type,bill_number,bill_number_source,customer_id) values ('normal','PERM-2','manual',$1)`, /row-level security/, [customerId])
+await fails(db, 'bills=view: cannot post a bill (function)', `select post_bill_to_ledger($1)`, /Not authorized to post bills/, [billId])
+await fails(db, 'bills=view: cannot generate a bill number', `select next_document_number('normal_bill','TST')`, /Not authorized/)
+check('bills=view: can still generate a quotation number (quotations default = edit)', (await one(db, `select next_document_number('quotation','QTST') n`)).n.startsWith('QTST-'))
+
+// 4. Expenses and ledger can be granted.
+await setPerm(STAFF, { expenses: 'view', ledger: 'view' })
+await asUser(db, STAFF)
+check('expenses=view: can read expenses', (await count('expenses')) > 0)
+await fails(db, 'expenses=view: cannot add an expense', `insert into expenses (expense_number,category,amount) values ('PE1','fuel',10)`, /row-level security/)
+check('ledger=view: can read the ledger', (await count('customer_ledger')) > 0)
+await setPerm(STAFF, { expenses: 'edit' })
+await asUser(db, STAFF)
+await db.query(`insert into expenses (expense_number,category,amount,expense_time) values ('PE2','fuel',10,'09:00')`)
+ok('expenses=edit: can add an expense')
+await asUser(db, ADMIN)
+await db.query(`delete from expenses where expense_number='PE2'`)
+
+// 5. A staff member cannot change their own (or anyone's) permissions.
+await setPerm(STAFF, null)
+await asUser(db, STAFF)
+eq('staff cannot grant themselves permissions (0 rows)', (await db.query(`update staff_profiles set permissions='{"expenses":"edit"}' where user_id='${STAFF}'`)).affectedRows, 0)
+
+// 6. Deactivated people get nothing, whatever their permissions say.
+await setPerm(STAFF2_INACTIVE, { customers: 'edit', bills: 'edit' })
+await asUser(db, STAFF2_INACTIVE)
+eq('inactive staff with edit permissions still read nothing', (await count('customers')) + (await count('bills')), 0)
+
+// 7. Admins are not limited by a permissions value.
+await setPerm(ADMIN, { bills: 'none' })
+await asUser(db, ADMIN)
+check('admin ignores permissions: still reads bills', (await count('bills')) > 0)
+
+// Leave everything as it was.
+await setPerm(ADMIN, null)
+await setPerm(STAFF2_INACTIVE, null)
+await asUser(db, STAFF)
 
 // ---------------------------------------------------------------------------
 console.log('\n== Audit trail ==')
@@ -628,7 +703,7 @@ const runBlock = async (file, subs) => {
   eq('02_structure_checks.sql: authenticated CREATE on public', v['authenticated can CREATE in schema public'], 'false')
   eq('02_structure_checks.sql: functions anon can execute', v['functions anon can execute'], '0')
   eq('02_structure_checks.sql: functions authenticated can execute', v['functions authenticated can execute'],
-    'apply_stock_movement, cancel_bill, current_role_is, is_active_staff, next_document_number, post_bill_to_ledger, record_ledger_adjustment, record_payment')
+    'apply_stock_movement, can_access, can_access_any, cancel_bill, current_role_is, is_active_staff, next_document_number, permissions_valid, post_bill_to_ledger, record_ledger_adjustment, record_payment')
   eq('02_structure_checks.sql: bills unique constraint', v['bills unique constraint'], 'UNIQUE (bill_type, bill_number)')
 
   // 01_make_admin.sql: the email-based inserts create exactly one admin and one staff profile.

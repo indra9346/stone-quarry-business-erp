@@ -5,7 +5,7 @@ import BusinessRouteWrapper from '@/features/central-gateway/BusinessRouteWrappe
 import BusinessSignIn from '@/features/auth/BusinessSignIn'
 import ForgotPassword from '@/features/auth/ForgotPassword'
 import ResetPassword from '@/features/auth/ResetPassword'
-import ProtectedBusinessRoute, { RequireAdmin } from '@/features/auth/ProtectedBusinessRoute'
+import ProtectedBusinessRoute, { RequireAdmin, RequireModule } from '@/features/auth/ProtectedBusinessRoute'
 import BusinessLayout from '@/layouts/BusinessLayout'
 import NotFound from '@/pages/NotFound'
 import { Skeleton } from '@/components/ui/feedback'
@@ -72,38 +72,58 @@ export default function App() {
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<Suspense fallback={<PageFallback />}><Dashboard /></Suspense>} />
 
-                <Route path="bills" element={<Suspense fallback={<PageFallback />}><BillList /></Suspense>} />
-                <Route path="bills/ev" element={<Suspense fallback={<PageFallback />}><BillList type="ev" /></Suspense>} />
-                <Route path="bills/normal" element={<Suspense fallback={<PageFallback />}><BillList type="normal" /></Suspense>} />
-                <Route path="bills/new" element={<Suspense fallback={<PageFallback />}><BillForm mode="create" /></Suspense>} />
-                <Route path="bills/:id" element={<Suspense fallback={<PageFallback />}><BillDetail /></Suspense>} />
-                <Route path="bills/:id/edit" element={<Suspense fallback={<PageFallback />}><BillForm mode="edit" /></Suspense>} />
-
-                <Route path="quotations" element={<Suspense fallback={<PageFallback />}><QuotationList /></Suspense>} />
-                <Route path="quotations/new" element={<Suspense fallback={<PageFallback />}><QuotationForm mode="create" /></Suspense>} />
-                <Route path="quotations/:id" element={<Suspense fallback={<PageFallback />}><QuotationDetail /></Suspense>} />
-                <Route path="quotations/:id/edit" element={<Suspense fallback={<PageFallback />}><QuotationForm mode="edit" /></Suspense>} />
-
-                <Route path="measurements" element={<Suspense fallback={<PageFallback />}><MeasurementList /></Suspense>} />
-                <Route path="measurements/new" element={<Suspense fallback={<PageFallback />}><MeasurementForm mode="create" /></Suspense>} />
-                <Route path="measurements/:id" element={<Suspense fallback={<PageFallback />}><MeasurementDetail /></Suspense>} />
-                <Route path="measurements/:id/edit" element={<Suspense fallback={<PageFallback />}><MeasurementForm mode="edit" /></Suspense>} />
-
-                <Route path="customers" element={<Suspense fallback={<PageFallback />}><CustomerList /></Suspense>} />
-                <Route path="customers/:id" element={<Suspense fallback={<PageFallback />}><CustomerDetail /></Suspense>} />
-                <Route path="payments" element={<Suspense fallback={<PageFallback />}><PaymentsPage /></Suspense>} />
-
-                <Route path="stock" element={<Suspense fallback={<PageFallback />}><StockList /></Suspense>} />
-                <Route path="stock/:id" element={<Suspense fallback={<PageFallback />}><StockDetail /></Suspense>} />
-                <Route path="vehicles" element={<Suspense fallback={<PageFallback />}><VehiclesPage /></Suspense>} />
-                <Route path="drivers" element={<Suspense fallback={<PageFallback />}><DriversPage /></Suspense>} />
-                <Route path="trips" element={<Suspense fallback={<PageFallback />}><TripsPage /></Suspense>} />
-
-                {/* Admin only: Staff who type these URLs see "Access denied" and no data is requested. */}
-                <Route element={<RequireAdmin />}>
+                <Route element={<RequireModule module="bills" />}>
+                  <Route path="bills" element={<Suspense fallback={<PageFallback />}><BillList /></Suspense>} />
+                  <Route path="bills/ev" element={<Suspense fallback={<PageFallback />}><BillList type="ev" /></Suspense>} />
+                  <Route path="bills/normal" element={<Suspense fallback={<PageFallback />}><BillList type="normal" /></Suspense>} />
+                  <Route path="bills/new" element={<Suspense fallback={<PageFallback />}><BillForm mode="create" /></Suspense>} />
+                  <Route path="bills/:id" element={<Suspense fallback={<PageFallback />}><BillDetail /></Suspense>} />
+                  <Route path="bills/:id/edit" element={<Suspense fallback={<PageFallback />}><BillForm mode="edit" /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="quotations" />}>
+                  <Route path="quotations" element={<Suspense fallback={<PageFallback />}><QuotationList /></Suspense>} />
+                  <Route path="quotations/new" element={<Suspense fallback={<PageFallback />}><QuotationForm mode="create" /></Suspense>} />
+                  <Route path="quotations/:id" element={<Suspense fallback={<PageFallback />}><QuotationDetail /></Suspense>} />
+                  <Route path="quotations/:id/edit" element={<Suspense fallback={<PageFallback />}><QuotationForm mode="edit" /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="measurements" />}>
+                  <Route path="measurements" element={<Suspense fallback={<PageFallback />}><MeasurementList /></Suspense>} />
+                  <Route path="measurements/new" element={<Suspense fallback={<PageFallback />}><MeasurementForm mode="create" /></Suspense>} />
+                  <Route path="measurements/:id" element={<Suspense fallback={<PageFallback />}><MeasurementDetail /></Suspense>} />
+                  <Route path="measurements/:id/edit" element={<Suspense fallback={<PageFallback />}><MeasurementForm mode="edit" /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="customers" />}>
+                  <Route path="customers" element={<Suspense fallback={<PageFallback />}><CustomerList /></Suspense>} />
+                  <Route path="customers/:id" element={<Suspense fallback={<PageFallback />}><CustomerDetail /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="payments" />}>
+                  <Route path="payments" element={<Suspense fallback={<PageFallback />}><PaymentsPage /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="ledger" />}>
                   <Route path="ledger" element={<Suspense fallback={<PageFallback />}><LedgerPage /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="stock" />}>
+                  <Route path="stock" element={<Suspense fallback={<PageFallback />}><StockList /></Suspense>} />
+                  <Route path="stock/:id" element={<Suspense fallback={<PageFallback />}><StockDetail /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="vehicles" />}>
+                  <Route path="vehicles" element={<Suspense fallback={<PageFallback />}><VehiclesPage /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="drivers" />}>
+                  <Route path="drivers" element={<Suspense fallback={<PageFallback />}><DriversPage /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="trips" />}>
+                  <Route path="trips" element={<Suspense fallback={<PageFallback />}><TripsPage /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="expenses" />}>
                   <Route path="expenses" element={<Suspense fallback={<PageFallback />}><ExpensesPage /></Suspense>} />
+                </Route>
+                <Route element={<RequireModule module="reports" />}>
                   <Route path="reports" element={<Suspense fallback={<PageFallback />}><Reports /></Suspense>} />
+                </Route>
+
+                {/* Admin only: settings, staff and the audit trail. Others see "Access denied" and no data is requested. */}
+                <Route element={<RequireAdmin />}>
                   <Route path="settings" element={<Suspense fallback={<PageFallback />}><Settings /></Suspense>} />
                   <Route path="audit-logs" element={<Suspense fallback={<PageFallback />}><AuditLogs /></Suspense>} />
                 </Route>

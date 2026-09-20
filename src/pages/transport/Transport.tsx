@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { WhenCan } from '@/features/auth/WhenCan'
 import { Plus } from 'lucide-react'
 import { useBizMutation, useBizQuery } from '@/hooks/useBiz'
 import { useCustomerPicker, usePrefix } from '@/hooks/useLookups'
@@ -35,7 +36,7 @@ export function VehiclesPage() {
   ]
   return (
     <div>
-      <PageHeader title="Vehicles" actions={<Button variant="accent" onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> Add vehicle</Button>} />
+      <PageHeader title="Vehicles" actions={<WhenCan module="vehicles"><Button variant="accent" onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> Add vehicle</Button></WhenCan>} />
       <Card>
         <DataTable columns={columns} rows={query.data} rowKey={(v) => v.id} loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()}
           onRowClick={(v) => setEditing(v)} empty={{ title: 'No vehicles yet', description: 'Add a vehicle to assign it to trips.' }} />
@@ -91,7 +92,7 @@ export function DriversPage() {
   ]
   return (
     <div>
-      <PageHeader title="Drivers" actions={<Button variant="accent" onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> Add driver</Button>} />
+      <PageHeader title="Drivers" actions={<WhenCan module="drivers"><Button variant="accent" onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> Add driver</Button></WhenCan>} />
       <Card>
         <DataTable columns={columns} rows={query.data} rowKey={(d) => d.id} loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()}
           onRowClick={(d) => setEditing(d)} empty={{ title: 'No drivers yet' }} />
@@ -153,7 +154,7 @@ export function TripsPage() {
   ]
   return (
     <div>
-      <PageHeader title="Trips" description="Loads and deliveries." actions={<Button variant="accent" onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> New trip</Button>} />
+      <PageHeader title="Trips" description="Loads and deliveries." actions={<WhenCan module="trips"><Button variant="accent" onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> New trip</Button></WhenCan>} />
       <Card>
         <FilterBar>
           <label className="block text-xs font-medium text-stone-600">Status

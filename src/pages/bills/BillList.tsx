@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { ExportCsvButton } from '@/components/ui/ExportCsvButton'
+import { fetchAllPages } from '@/lib/csv'
+import { billColumns } from '@/lib/exportColumns'
+import { WhenCan } from '@/features/auth/WhenCan'
 import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
@@ -52,12 +56,19 @@ export default function BillList({ type }: { type?: BillType }) {
         description="Draft bills can be edited; posted bills are locked; cancelled bills stay on record."
         actions={
           <>
+            <ExportCsvButton
+              name={type ? `${type}-bills` : 'bills'}
+              columns={billColumns}
+              load={(c) => fetchAllPages((p) => listBills(c, { type, q: dq, state, from: range.from || undefined, to: range.to || undefined, page: p }))}
+            />
+            <WhenCan module="bills">
             <Link to={`${base}/new?type=normal`} className="inline-flex h-9 items-center gap-2 rounded-md bg-navy-800 px-4 text-sm font-medium text-white hover:bg-navy-700">
               <Plus className="h-4 w-4" /> Normal bill
             </Link>
             <Link to={`${base}/new?type=ev`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-semibold text-navy-950 hover:bg-amber-400">
               <Plus className="h-4 w-4" /> EV bill
             </Link>
+            </WhenCan>
           </>
         }
       />

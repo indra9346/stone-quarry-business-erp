@@ -15,7 +15,7 @@ obviously fake values.
 
 ## Suggested order for a new installation
 1. **Settings → Business:** name, address, phone, email, GSTIN (printed on every document).
-2. **Settings → Stock → Units:** add only the units the business really uses.
+2. **Settings → Stock → Units:** add the units the business really uses. The "Common quarry units" checklist (tonne, kg, m3, cft, brass, m2, sqft, running metre/foot, piece, truck load) adds only the ones you tick. Code is the short form (`m3`), Label the full name (`Cubic metre`); only the label and kind can be changed later.
 3. **Stock → Material** (admin), then **Stock item**, then an **opening stock** movement.
 4. **Customers**, **Vehicles**, **Drivers**.
 5. Bills, quotations, measurement sheets, payments as they happen.
@@ -87,3 +87,16 @@ Category, amount, date/time, description, vendor name, payment mode, reference n
 - Driver: name, phone, licence number and expiry.
 - Trip: vehicle, driver, customer, date, pickup, destination, load quantity (a plain
   number), status.
+
+## Staff and their access
+**Settings → Users / staff → Add a staff login:** name, email, a password you choose, and the role.
+The grid under the role shows what that person will be able to do; change any module to
+*No access*, *View only* or *View & edit* before creating the login. Later, **Edit access** on a
+person's row changes it. The ledger and reports are view-only by design; settings, staff
+management and the audit log are always admin-only.
+
+## Exporting data
+Bills, quotations, customers, payments, customer ledger, expenses and stock have an **Export CSV**
+button. It downloads everything matching the filters on screen (all pages) as a file that opens in
+Excel or Google Sheets: money and quantities are plain numbers, dates are DD-MM-YYYY, and a blank
+stays blank. Bills, quotations and measurement sheets also have **Print** and **PDF** on their page.

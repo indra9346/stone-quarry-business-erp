@@ -1,3 +1,4 @@
+import type { Permissions } from '@/lib/permissions'
 /**
  * Row types for the business-template schema (supabase/migrations/
  * business-template). Hand-written from the migrations, which are the source
@@ -15,6 +16,8 @@ export interface StaffProfile {
   phone: string | null
   role: StaffRole
   status: 'active' | 'inactive'
+  /** Per-person module overrides (null = role defaults). See src/lib/permissions.ts. */
+  permissions: Permissions | null
   created_at: string
   updated_at: string
 }

@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { ExportCsvButton } from '@/components/ui/ExportCsvButton'
+import { stockColumns } from '@/lib/exportColumns'
+import { WhenCan } from '@/features/auth/WhenCan'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeftRight, Plus } from 'lucide-react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
@@ -73,8 +76,9 @@ export function StockList() {
         description="Every quantity is the result of recorded movements. Bills and measurement sheets do not change stock by themselves."
         actions={
           <>
+            <ExportCsvButton name="stock" columns={stockColumns} load={(c) => listStock(c, { category: category || undefined, q: dq })} />
             {isAdmin && <Button onClick={() => setAddingMaterial(true)}><Plus className="h-4 w-4" /> Material</Button>}
-            <Button variant="accent" onClick={() => setAddingItem(true)}><Plus className="h-4 w-4" /> Stock item</Button>
+            <WhenCan module="stock"><Button variant="accent" onClick={() => setAddingItem(true)}><Plus className="h-4 w-4" /> Stock item</Button></WhenCan>
           </>
         }
       />
@@ -191,7 +195,7 @@ export function StockDetail() {
         title={material.name}
         crumbs={[{ label: 'Stock', to: `/business/${code}/stock` }, { label: material.name }]}
         description={[CATEGORY_LABEL[material.category], b.batch_code && `Batch ${b.batch_code}`, b.location].filter(Boolean).join(' · ')}
-        actions={<Button variant="accent" onClick={() => setMoving(true)}><ArrowLeftRight className="h-4 w-4" /> Add movement</Button>}
+        actions={<WhenCan module="stock"><Button variant="accent" onClick={() => setMoving(true)}><ArrowLeftRight className="h-4 w-4" /> Add movement</Button></WhenCan>}
       />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <KpiCard label="Opening" value={<QuantityDisplay value={b.opening_quantity} unit={b.unit} />} />

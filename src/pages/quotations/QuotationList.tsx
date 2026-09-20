@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { ExportCsvButton } from '@/components/ui/ExportCsvButton'
+import { fetchAllPages } from '@/lib/csv'
+import { quotationColumns } from '@/lib/exportColumns'
+import { WhenCan } from '@/features/auth/WhenCan'
 import { Link, useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
@@ -42,9 +46,18 @@ export default function QuotationList() {
         title="Quotations"
         description="Provisional module — numbering, expiry and tax handling follow the current defaults until the business confirms them."
         actions={
-          <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-semibold text-navy-950 hover:bg-amber-400">
-            <Plus className="h-4 w-4" /> New quotation
-          </Link>
+          <>
+            <ExportCsvButton
+              name="quotations"
+              columns={quotationColumns}
+              load={(c) => fetchAllPages((p) => listQuotations(c, { q: dq, status: status || undefined, from: range.from || undefined, to: range.to || undefined, page: p }))}
+            />
+          <WhenCan module="quotations">
+            <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-semibold text-navy-950 hover:bg-amber-400">
+              <Plus className="h-4 w-4" /> New quotation
+            </Link>
+          </WhenCan>
+          </>
         }
       />
       <Card>

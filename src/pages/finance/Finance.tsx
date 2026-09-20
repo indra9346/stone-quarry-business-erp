@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { ExportCsvButton } from '@/components/ui/ExportCsvButton'
+import { fetchAllPages } from '@/lib/csv'
+import { expenseColumns, ledgerColumns, paymentColumns } from '@/lib/exportColumns'
+import { WhenAdmin, WhenCan } from '@/features/auth/WhenCan'
 import { Link } from 'react-router-dom'
 import { Plus, Wallet } from 'lucide-react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
@@ -43,7 +47,12 @@ export function PaymentsPage() {
       <PageHeader
         title="Payments"
         description="Money received from customers. Payments are recorded once and cannot be edited or deleted."
-        actions={<Button variant="accent" onClick={() => setOpen(true)}><Wallet className="h-4 w-4" /> Record payment</Button>}
+        actions={
+          <>
+            <ExportCsvButton name="payments" columns={paymentColumns} load={(c) => fetchAllPages((p) => listPayments(c, { customerId: customerId || undefined, from: range.from || undefined, to: range.to || undefined, page: p }))} />
+            <WhenCan module="payments"><Button variant="accent" onClick={() => setOpen(true)}><Wallet className="h-4 w-4" /> Record payment</Button></WhenCan>
+          </>
+        }
       />
       <Card>
         <FilterBar>
@@ -108,7 +117,14 @@ export function LedgerPage() {
       <PageHeader
         title="Customer ledger"
         description="Bills debit the customer; payments credit them. The balance is what the customer still owes. Entries are system-generated and cannot be edited."
-        actions={customerId ? <Button onClick={() => setAdjusting(true)}>Opening balance / adjustment</Button> : undefined}
+        actions={
+          customerId ? (
+            <>
+              <ExportCsvButton name="customer-ledger" columns={ledgerColumns} load={(c) => fetchAllPages((p) => listLedger(c, { customerId, from: range.from || undefined, to: range.to || undefined, page: p }))} />
+              <WhenAdmin><Button onClick={() => setAdjusting(true)}>Opening balance / adjustment</Button></WhenAdmin>
+            </>
+          ) : undefined
+        }
       />
       <Card>
         <FilterBar>
@@ -195,7 +211,12 @@ export function ExpensesPage() {
   return (
     <div>
       <PageHeader title="Expenses" description="Money the business spends. Not connected to customer payments or to any person by phone number."
-        actions={<Button variant="accent" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Add expense</Button>} />
+        actions={
+          <>
+            <ExportCsvButton name="expenses" columns={expenseColumns} load={(c) => fetchAllPages((p) => listExpenses(c, { category: category || undefined, from: range.from || undefined, to: range.to || undefined, page: p }))} />
+            <WhenCan module="expenses"><Button variant="accent" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Add expense</Button></WhenCan>
+          </>
+        } />
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <KpiCard label="Total in range" loading={summary.isLoading} value={<CurrencyDisplay value={summary.data?.total} />} hint={summary.data ? `${summary.data.count} expense${summary.data.count === 1 ? '' : 's'}` : undefined} />
         {summary.data?.byCategory.slice(0, 2).map(([cat, total]) => <KpiCard key={cat} label={cat} value={<CurrencyDisplay value={total} />} />)}

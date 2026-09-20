@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { WhenCan } from '@/features/auth/WhenCan'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
@@ -46,9 +47,11 @@ export function MeasurementList() {
         title="Measurement sheets"
         description="Independent documents, stored exactly as written. They are not linked to bills, quotations, payments, the ledger or stock."
         actions={
-          <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-semibold text-navy-950 hover:bg-amber-400">
-            <Plus className="h-4 w-4" /> New sheet
-          </Link>
+          <WhenCan module="measurements">
+            <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-semibold text-navy-950 hover:bg-amber-400">
+              <Plus className="h-4 w-4" /> New sheet
+            </Link>
+          </WhenCan>
         }
       />
       <Card>
@@ -271,9 +274,11 @@ export function MeasurementDetail() {
         description={sheet.sheet_date ? formatDate(sheet.sheet_date) : 'No date on the sheet'}
         actions={
           <>
-            <Link to={`/business/${code}/measurements/${sheet.id}/edit`}>
-              <Button><Pencil className="h-4 w-4" /> Edit</Button>
-            </Link>
+            <WhenCan module="measurements">
+              <Link to={`/business/${code}/measurements/${sheet.id}/edit`}>
+                <Button><Pencil className="h-4 w-4" /> Edit</Button>
+              </Link>
+            </WhenCan>
             <PrintButton />
             <PDFButton />
           </>

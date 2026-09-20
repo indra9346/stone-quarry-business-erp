@@ -4,12 +4,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { BusinessCode } from '@/types/business'
 import { BUSINESS_REGISTRY } from '@/types/business'
 import type { StaffProfile } from '@/types/db'
+import { allows, levelFor } from '@/lib/permissions'
 import { getBusinessClient, isBusinessConfigured } from '@/lib/supabase/business-client'
 import { BusinessContext, type AccessState, type BusinessContextValue } from './businessContextValue'
 
 interface AuthState {
   session: Session | null
-  staff: Pick<StaffProfile, 'role' | 'status' | 'full_name'> | null
+  staff: (Pick<StaffProfile, 'role' | 'status' | 'full_name'> & { permissions?: StaffProfile['permissions'] }) | null
   loading: boolean
   recovery: boolean
 }
@@ -46,11 +47,21 @@ export function BusinessProvider({ code, children }: { code: BusinessCode; child
         if (active) setAuth((s) => ({ session: null, staff: null, loading: false, recovery: recovery ?? s.recovery }))
         return
       }
-      const { data, error } = await client!
+      type Row = { data: AuthState['staff']; error: unknown }
+      const withPermissions = (await client!
         .from('staff_profiles')
-        .select('role,status,full_name')
+        .select('role,status,full_name,permissions')
         .eq('user_id', session.user.id)
-        .maybeSingle()
+        .maybeSingle()) as Row
+      // A project that has not had migration 013 yet has no `permissions` column:
+      // fall back to role-only access instead of locking everyone out.
+      const { data, error } = withPermissions.error
+        ? ((await client!
+            .from('staff_profiles')
+            .select('role,status,full_name')
+            .eq('user_id', session.user.id)
+            .maybeSingle()) as Row)
+        : withPermissions
       if (!active) return
       setAuth((s) => ({
         session,
@@ -93,6 +104,8 @@ export function BusinessProvider({ code, children }: { code: BusinessCode; child
       fullName: auth.staff?.full_name ?? null,
       role,
       isAdmin: role === 'admin',
+      permissions: auth.staff?.permissions ?? null,
+      can: (module, need = 'view') => allows(levelFor(role, auth.staff?.permissions ?? null, module), need),
       recovery: auth.recovery,
       async signIn(email, password) {
         if (!client) return { error: 'This business portal is not configured yet.' }

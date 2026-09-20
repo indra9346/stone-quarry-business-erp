@@ -22,7 +22,7 @@ function initials(name: string) {
  * which isolated database they are working in.
  */
 export default function BusinessLayout() {
-  const { profile, code, role, isAdmin, fullName, email, signOut } = useBusinessContext()
+  const { profile, code, role, isAdmin, can, fullName, email, signOut } = useBusinessContext()
   const navigate = useNavigate()
   const location = useLocation()
   const [drawer, setDrawer] = useState(false)
@@ -60,7 +60,7 @@ export default function BusinessLayout() {
       </div>
 
       <nav className="scroll-thin flex-1 space-y-5 overflow-y-auto px-3 py-4" aria-label="Main">
-        {navFor(isAdmin).map((group) => (
+        {navFor(isAdmin, can).map((group) => (
           <div key={group.label}>
             <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-stone-500">{group.label}</p>
             <ul className="space-y-0.5">
@@ -134,7 +134,7 @@ export default function BusinessLayout() {
             <span className="truncate text-stone-500">{sectionLabel}</span>
           </div>
 
-          <form onSubmit={onSearch} className="relative ml-auto w-full max-w-xs" role="search">
+          <form onSubmit={onSearch} className={cn('relative ml-auto w-full max-w-xs', !can('bills') && 'invisible')} role="search" aria-hidden={!can('bills')}>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden />
             <input
               value={search}

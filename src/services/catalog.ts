@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Permissions } from '@/lib/permissions'
 import type {
   AuditLog,
   Customer,
@@ -16,6 +17,13 @@ export async function listUnits(c: SupabaseClient): Promise<Unit[]> {
 }
 export async function createUnit(c: SupabaseClient, u: Unit): Promise<void> {
   okVoid(await c.from('units').insert(u))
+}
+export async function createUnits(c: SupabaseClient, units: Unit[]): Promise<void> {
+  if (units.length) okVoid(await c.from('units').insert(units))
+}
+/** The code is the identity used by documents, so only the label and kind can change. */
+export async function updateUnit(c: SupabaseClient, code: string, patch: Pick<Unit, 'label' | 'measurement_kind'>): Promise<void> {
+  okVoid(await c.from('units').update(patch).eq('code', code))
 }
 
 /* -------------------------------------------------------------- materials */
@@ -66,21 +74,23 @@ export async function listStaff(c: SupabaseClient): Promise<StaffProfile[]> {
 export async function updateStaff(
   c: SupabaseClient,
   userId: string,
-  patch: Partial<Pick<StaffProfile, 'role' | 'status' | 'full_name' | 'phone'>>,
+  patch: Partial<Pick<StaffProfile, 'role' | 'status' | 'full_name' | 'phone' | 'permissions'>>,
 ): Promise<void> {
   okVoid(await c.from('staff_profiles').update(patch).eq('user_id', userId))
 }
 export async function createStaffProfile(
   c: SupabaseClient,
-  p: Pick<StaffProfile, 'user_id' | 'full_name' | 'role' | 'phone'>,
+  p: Pick<StaffProfile, 'user_id' | 'full_name' | 'role' | 'phone'> & { permissions?: Permissions | null },
 ): Promise<void> {
-  okVoid(await c.from('staff_profiles').insert({ ...p, status: 'active' }))
+  const { permissions, ...rest } = p
+  // `permissions` is only sent when set, so this still works on a project without migration 013.
+  okVoid(await c.from('staff_profiles').insert({ ...rest, ...(permissions ? { permissions } : {}), status: 'active' }))
 }
 
 /** Creates a login + role through the create-staff Edge Function (admin only, server-checked). */
 export async function createStaffLogin(
   c: SupabaseClient,
-  p: { email: string; password: string; full_name: string; role: 'admin' | 'staff' },
+  p: { email: string; password: string; full_name: string; role: 'admin' | 'staff'; permissions?: Permissions | null },
 ): Promise<void> {
   const { error } = await c.functions.invoke('create-staff', { body: p })
   if (!error) return

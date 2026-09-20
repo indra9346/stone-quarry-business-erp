@@ -4,6 +4,7 @@ import NoAccess from './NoAccess'
 import { AccessDenied, Spinner } from '@/components/ui/feedback'
 import { Button } from '@/components/ui/Button'
 import { Link } from 'react-router-dom'
+import type { ModuleId } from '@/lib/permissions'
 
 /**
  * Client-side route guard (UX). Unauthenticated or unauthorised users never
@@ -29,6 +30,23 @@ export default function ProtectedBusinessRoute() {
 export function RequireAdmin() {
   const { isAdmin, code } = useBusinessContext()
   if (!isAdmin) {
+    return (
+      <AccessDenied
+        action={
+          <Link to={`/business/${code}/dashboard`}>
+            <Button variant="primary">Return to dashboard</Button>
+          </Link>
+        }
+      />
+    )
+  }
+  return <Outlet />
+}
+
+/** Module routes: needs at least view access to the module (the database enforces it too). */
+export function RequireModule({ module }: { module: ModuleId }) {
+  const { can, code } = useBusinessContext()
+  if (!can(module, 'view')) {
     return (
       <AccessDenied
         action={
