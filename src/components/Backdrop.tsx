@@ -84,15 +84,26 @@ export default function Backdrop({ className, video, image, compact, position = 
         ))}
 
       {image && (
-        <img
-          src={image}
-          alt=""
-          decoding="async"
-          fetchPriority={compact ? 'auto' : 'high'}
-          className="absolute inset-0 h-full w-full animate-kenburns object-cover"
-          style={{ objectPosition: position }}
-          onError={(e) => (e.currentTarget.style.display = 'none')}
-        />
+        /* Phones/tablets in portrait: the WHOLE photo is shown at the top at its own
+           aspect ratio and fades into the page colour below. From md up (or in the
+           compact banner) it fills the area instead. */
+        <div
+          className={cn(
+            'absolute inset-x-0 top-0 overflow-hidden',
+            compact ? 'inset-0' : 'aspect-[1920/1088] md:inset-0 md:aspect-auto',
+          )}
+        >
+          <img
+            src={image}
+            alt=""
+            decoding="async"
+            fetchPriority={compact ? 'auto' : 'high'}
+            className="h-full w-full animate-kenburns object-cover md:[object-position:var(--pos)]"
+            style={{ ['--pos' as string]: position }}
+            onError={(e) => (e.currentTarget.style.display = 'none')}
+          />
+          {!compact && <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-navy-950 md:hidden" />}
+        </div>
       )}
 
       {withVideo && (
@@ -110,7 +121,7 @@ export default function Backdrop({ className, video, image, compact, position = 
       )}
 
       {/* keeps text readable */}
-      <div className="absolute inset-0 bg-gradient-to-b from-navy-950/70 via-navy-950/30 to-navy-950/80" />
+      <div className={cn("absolute inset-0 bg-gradient-to-b", image ? "from-navy-950/40 via-navy-950/10 to-navy-950/70" : "from-navy-950/70 via-navy-950/30 to-navy-950/80")} />
       {image && <div className="absolute inset-0 bg-gradient-to-r from-navy-950/75 via-navy-950/25 to-transparent" />}
     </div>
   )

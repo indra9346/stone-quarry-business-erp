@@ -29,7 +29,7 @@ export default function MainBranchHome() {
             Quarry · Stone · Factory operations
           </p>
           <h1 className="mt-3 max-w-2xl animate-rise text-4xl font-semibold leading-tight text-white sm:text-5xl" style={{ animationDelay: '160ms' }}>
-            From the quarry face to the final bill.
+            From the quarry face to the finished stone.
           </h1>
           <p className="mt-4 max-w-xl animate-rise text-base text-stone-300" style={{ animationDelay: '240ms' }}>
             Choose a business to continue. Each one runs on its own database with its own logins, so signing in to one gives no access to the other.
