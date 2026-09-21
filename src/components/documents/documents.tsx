@@ -89,7 +89,7 @@ export function BillDocument({
     <DocumentPage className="relative">
       {state === 'cancelled' && <DocumentStatus label="Cancelled" />}
       {state === 'draft' && <DocumentStatus label="Draft" tone="amber" />}
-      <DocumentHeader title={bill.bill_type === 'ev' ? 'EV Bill' : 'Bill'} number={bill.bill_number} date={bill.bill_date} time={bill.created_at} />
+      <DocumentHeader title="Bill" number={bill.bill_number} date={bill.bill_date} time={bill.created_at} />
 
       <div className="mt-4 grid grid-cols-2 gap-6">
         <div className="space-y-1">
@@ -98,7 +98,6 @@ export function BillDocument({
           <Kv label="GSTIN">{bill.party_gstin || bill.customers?.gstin}</Kv>
         </div>
         <div className="space-y-1">
-          <Kv label="Bill type">{bill.bill_type === 'ev' ? 'EV Bill' : 'Normal Bill'}</Kv>
           <Kv label="Vehicle No.">{bill.vehicle_number}</Kv>
           <Kv label="E-Way Bill No.">{bill.eway_bill_number}</Kv>
         </div>
@@ -110,7 +109,7 @@ export function BillDocument({
             <th className={cn(th, 'w-10')}>Sl.</th>
             <th className={th}>Particulars</th>
             <th className={cn(th, 'w-20')}>HSN</th>
-            <th className={cn(th, 'w-24 text-right')}>Qty</th>
+            <th className={cn(th, 'w-24 text-right')}>Pieces</th>
             <th className={cn(th, 'w-24 text-right')}>Rate</th>
             <th className={cn(th, 'w-28 text-right')}>Amount</th>
           </tr>
@@ -201,7 +200,7 @@ export function QuotationDocument({
             <th className={cn(th, 'w-10')}>Sl.</th>
             <th className={th}>Particulars</th>
             <th className={cn(th, 'w-20')}>HSN</th>
-            <th className={cn(th, 'w-24 text-right')}>Qty</th>
+            <th className={cn(th, 'w-24 text-right')}>Pieces</th>
             <th className={cn(th, 'w-24 text-right')}>Rate</th>
             <th className={cn(th, 'w-28 text-right')}>Amount</th>
           </tr>

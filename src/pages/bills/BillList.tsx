@@ -3,7 +3,7 @@ import { ExportCsvButton } from '@/components/ui/ExportCsvButton'
 import { fetchAllPages } from '@/lib/csv'
 import { billColumns } from '@/lib/exportColumns'
 import { WhenCan } from '@/features/auth/WhenCan'
-import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
 import { useBizQuery } from '@/hooks/useBiz'
@@ -11,13 +11,12 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { listBills, PAGE_SIZE, type BillRow } from '@/services/bills'
 import { Card, CurrencyDisplay, DateRangePicker, FilterBar, PageHeader, SearchBar } from '@/components/ui/layout'
 import { DataTable, type Column } from '@/components/ui/DataTable'
-import { BillStateBadge, BillTypeBadge, PaymentStatusBadge } from '@/components/ui/StatusBadge'
+import { BillStateBadge, PaymentStatusBadge } from '@/components/ui/StatusBadge'
 import { Select } from '@/components/ui/form'
 import { formatDate, formatTime } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import type { BillState, BillType } from '@/types/db'
+import type { BillState } from '@/types/db'
 
-export default function BillList({ type }: { type?: BillType }) {
+export default function BillList() {
   const { code } = useBusinessContext()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -28,25 +27,18 @@ export default function BillList({ type }: { type?: BillType }) {
   const dq = useDebounce(q)
   const base = `/business/${code}/bills`
 
-  const query = useBizQuery(['bills', 'list', type ?? 'all', dq, state, range.from, range.to, page], (c) =>
-    listBills(c, { type, q: dq, state, from: range.from || undefined, to: range.to || undefined, page }),
+  const query = useBizQuery(['bills', 'list', 'all', dq, state, range.from, range.to, page], (c) =>
+    listBills(c, { q: dq, state, from: range.from || undefined, to: range.to || undefined, page }),
   )
 
   const columns: Column<BillRow>[] = [
     { key: 'number', header: 'Bill no.', sortValue: (b) => b.bill_number, cell: (b) => <span className="font-medium text-stone-900">{b.bill_number}</span> },
-    { key: 'type', header: 'Type', cell: (b) => <BillTypeBadge type={b.bill_type} /> },
     { key: 'date', header: 'Date', sortValue: (b) => b.bill_date, cell: (b) => <>{formatDate(b.bill_date)} <span className="ml-1.5 text-xs text-stone-400">{formatTime(b.created_at)}</span></> },
     { key: 'customer', header: 'Customer', sortValue: (b) => b.customers?.customer_name ?? null, cell: (b) => b.party_name || b.customers?.customer_name || '—' },
     { key: 'total', header: 'Total', numeric: true, sortValue: (b) => b.grand_total, cell: (b) => <CurrencyDisplay value={b.grand_total} /> },
     { key: 'balance', header: 'Balance due', numeric: true, sortValue: (b) => b.balance_due, cell: (b) => <CurrencyDisplay value={b.balance_due} /> },
     { key: 'pay', header: 'Payment', cell: (b) => (b.status === 'cancelled' ? '—' : <PaymentStatusBadge status={b.payment_status} />) },
     { key: 'state', header: 'Status', cell: (b) => <BillStateBadge bill={b} /> },
-  ]
-
-  const tabs = [
-    { to: base, label: 'All bills', end: true },
-    { to: `${base}/ev`, label: 'EV bills' },
-    { to: `${base}/normal`, label: 'Normal bills' },
   ]
 
   return (
@@ -57,37 +49,19 @@ export default function BillList({ type }: { type?: BillType }) {
         actions={
           <>
             <ExportCsvButton
-              name={type ? `${type}-bills` : 'bills'}
+              name="bills"
               columns={billColumns}
-              load={(c) => fetchAllPages((p) => listBills(c, { type, q: dq, state, from: range.from || undefined, to: range.to || undefined, page: p }))}
+              load={(c) => fetchAllPages((p) => listBills(c, { q: dq, state, from: range.from || undefined, to: range.to || undefined, page: p }))}
             />
             <WhenCan module="bills">
-            <Link to={`${base}/new?type=normal`} className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-800 px-4 text-sm font-medium text-white hover:bg-slate-700 shadow-sm">
-              <Plus className="h-4 w-4" /> Normal bill
-            </Link>
-            <Link to={`${base}/new?type=ev`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-bold text-slate-900 hover:bg-amber-400 shadow-sm">
-              <Plus className="h-4 w-4" /> EV bill
-            </Link>
+              <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-bold text-slate-900 hover:bg-amber-400 shadow-sm">
+                <Plus className="h-4 w-4" /> New bill
+              </Link>
             </WhenCan>
           </>
         }
       />
       <Card>
-        <div className="flex gap-1 border-b border-stone-200 px-3 pt-2" role="tablist">
-          {tabs.map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              end={t.end}
-              role="tab"
-              className={({ isActive }) =>
-                cn('-mb-px rounded-t-md border-b-2 px-4 py-2 text-sm font-medium transition-colors', isActive ? 'border-amber-500 text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-800')
-              }
-            >
-              {t.label}
-            </NavLink>
-          ))}
-        </div>
         <FilterBar>
           <div className="w-full sm:w-64">
             <SearchBar value={q} onChange={(v) => { setQ(v); setPage(0) }} placeholder="Search by bill number" />

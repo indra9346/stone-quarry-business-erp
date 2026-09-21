@@ -45,7 +45,7 @@ export default function BillDetail() {
   return (
     <div>
       <PageHeader
-        title={`${bill.bill_type === 'ev' ? 'EV bill' : 'Normal bill'} ${bill.bill_number}`}
+        title={`Bill ${bill.bill_number}`}
         crumbs={[{ label: 'Bills', to: `/business/${code}/bills` }, { label: bill.bill_number }]}
         description={`${bill.party_name || bill.customers?.customer_name || '—'} · ${formatDate(bill.bill_date)} · ${formatTime(bill.created_at)}`}
         actions={

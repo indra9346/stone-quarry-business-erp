@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
 import { useBizMutation, useBizQuery } from '@/hooks/useBiz'
 import { useCustomerPicker, usePrefix, useUnits, useVehiclePicker } from '@/hooks/useLookups'
 import { createBill, generateNumber, getBill, lineAmount, updateBill, type BillInput } from '@/services/bills'
+import { createCustomer } from '@/services/catalog'
 import { Card, CardHeader, PageHeader } from '@/components/ui/layout'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
+import { CustomerCombobox } from '@/components/ui/CustomerCombobox'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import LineItemsEditor from '@/features/documents/LineItemsEditor'
 import { draftsToInputs, newLine, rowsToDrafts, type LineDraft } from '@/features/documents/lines'
 import { formatINR, parseOptionalNumber, round2, todayIST } from '@/lib/format'
-import { billState, type BillType } from '@/types/db'
+import { billState } from '@/types/db'
 
 const optNum = (s: string) => {
   const n = parseOptionalNumber(s)
@@ -20,26 +22,20 @@ const optNum = (s: string) => {
 
 /** Create / edit a DRAFT bill. Posted and cancelled bills are read-only (enforced by the database). */
 export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
-  const { code } = useBusinessContext()
+  const { code, client } = useBusinessContext()
   const { id } = useParams()
-  const [search] = useSearchParams()
   const navigate = useNavigate()
   const units = useUnits()
   const customers = useCustomerPicker()
   const vehicles = useVehiclePicker()
-  const evPrefix = usePrefix('ev_bill')
   const normalPrefix = usePrefix('normal_bill')
 
   const existing = useBizQuery(['bills', 'detail', id ?? ''], (c) => getBill(c, id!), { enabled: mode === 'edit' && !!id })
 
-  const [type, setType] = useState<BillType>(search.get('type') === 'ev' ? 'ev' : 'normal')
-  const typeParam = search.get('type')
-  useEffect(() => {
-    if (mode === 'create') setType(typeParam === 'ev' ? 'ev' : 'normal')
-  }, [mode, typeParam])
   const [numberMode, setNumberMode] = useState<'manual' | 'generated'>('manual')
   const [number, setNumber] = useState('')
   const [customerId, setCustomerId] = useState('')
+  const [customerName, setCustomerName] = useState('')
   const [date, setDate] = useState(todayIST())
   const [partyName, setPartyName] = useState('')
   const [partyAddress, setPartyAddress] = useState('')
@@ -61,10 +57,10 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
     const d = existing.data
     if (!d || loaded) return
     const b = d.bill
-    setType(b.bill_type)
     setNumberMode(b.bill_number_source)
     setNumber(b.bill_number)
     setCustomerId(b.customer_id)
+    setCustomerName(b.customers?.customer_name ?? b.party_name ?? '')
     setDate(b.bill_date)
     setPartyName(b.party_name ?? '')
     setPartyAddress(b.party_address ?? '')
@@ -105,17 +101,53 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
         await updateBill(c, id, input)
         return id
       }
-      const bill = await createBill(c, input)
-      return bill.id
+      return (await createBill(c, input)).id
     },
-    { invalidate: [['bills'], ['dashboard'], ['alerts']], onSuccess: (billId) => navigate(`/business/${code}/bills/${billId}`) },
+    { invalidate: [['bills'], ['dashboard']], onSuccess: (bid) => navigate(`/business/${code}/bills/${bid}`) },
   )
-  const generate = useBizMutation((c, t: BillType) => generateNumber(c, t === 'ev' ? 'ev_bill' : 'normal_bill', t === 'ev' ? evPrefix : normalPrefix))
+  const generate = useBizMutation((c, p: string) => generateNumber(c, 'normal_bill', p))
 
   async function submit() {
     const errs: string[] = []
-    if (!customerId) errs.push('Choose a customer.')
-    if (numberMode === 'manual' && !number.trim()) errs.push('Enter the bill number (or choose "Generate next number").')
+
+    let finalCustomerId = customerId
+    if (!finalCustomerId && customerName.trim() && client) {
+      const match = customers.data?.find((c) => c.customer_name.trim().toLowerCase() === customerName.trim().toLowerCase())
+      if (match) {
+        finalCustomerId = match.id
+      } else {
+        try {
+          const newCust = await createCustomer(client, {
+            customer_name: customerName.trim(),
+            company_name: null,
+            phone: null,
+            alternate_phone: null,
+            email: null,
+            billing_address: partyAddress.trim() || null,
+            shipping_address: null,
+            city: null,
+            state: null,
+            pincode: null,
+            gstin: partyGstin.trim() || null,
+            notes: 'Registered from bill',
+            status: 'active',
+          })
+          finalCustomerId = newCust.id
+          setCustomerId(newCust.id)
+          void customers.refetch()
+        } catch (e) {
+          return setErrors([`Could not save new customer: ${e instanceof Error ? e.message : String(e)}`])
+        }
+      }
+    }
+
+    if (!finalCustomerId) errs.push('Enter or choose a customer name.')
+    if (numberMode === 'manual' && !number.trim()) errs.push('Enter the bill number.')
+    if (cgst && igst) errs.push('Use either CGST+SGST (intra-state) or IGST (inter-state), not both.')
+    if (sgst && igst) errs.push('Use either CGST+SGST (intra-state) or IGST (inter-state), not both.')
+    if ((cgst && !sgst) || (!cgst && sgst)) errs.push('CGST and SGST are always charged together at equal rates.')
+    if (preview.taxable < 0) errs.push('The discount is larger than the subtotal.')
+
     const { items, errors: lineErrors } = draftsToInputs(lines)
     errs.push(...lineErrors)
     for (const [label, v] of [['CGST %', cgst], ['SGST %', sgst], ['IGST %', igst], ['Discount', discount], ['Other charges', other]] as const) {
@@ -128,19 +160,19 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
     let billNumber = number.trim()
     try {
       if (numberMode === 'generated' && !(mode === 'edit' && existing.data?.bill.bill_number_source === 'generated')) {
-        billNumber = await generate.mutateAsync(type)
+        billNumber = await generate.mutateAsync(normalPrefix)
       }
     } catch (e) {
       return setErrors([e instanceof Error ? e.message : 'Could not generate a number.'])
     }
 
     const input: BillInput = {
-      bill_type: type,
+      bill_type: 'normal',
       bill_number: billNumber,
       bill_number_source: numberMode,
-      customer_id: customerId,
+      customer_id: finalCustomerId,
       bill_date: date,
-      party_name: partyName.trim() || null,
+      party_name: partyName.trim() || customerName.trim() || null,
       party_address: partyAddress.trim() || null,
       party_gstin: partyGstin.trim() || null,
       eway_bill_number: eway.trim() || null,
@@ -175,7 +207,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
   return (
     <div>
       <PageHeader
-        title={mode === 'edit' ? 'Edit draft bill' : type === 'ev' ? 'New EV bill' : 'New Normal bill'}
+        title={mode === 'edit' ? 'Edit draft bill' : 'New bill'}
         crumbs={[{ label: 'Bills', to: `/business/${code}/bills` }, { label: mode === 'edit' ? 'Edit' : 'New' }]}
         actions={
           <>
@@ -204,15 +236,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
           <Card>
             <CardHeader title="Bill details" />
             <div className="grid gap-4 p-5 sm:grid-cols-2">
-              <FormField label="Bill type" required>
-                {(p) => (
-                  <Select {...p} value={type} onChange={(e) => setType(e.target.value as BillType)}>
-                    <option value="normal">Normal Bill</option>
-                    <option value="ev">EV Bill</option>
-                  </Select>
-                )}
-              </FormField>
-              <FormField label="Bill date" required>
+              <FormField label="Bill date" required className="sm:col-span-2">
                 {(p) => <Input {...p} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}
               </FormField>
 
@@ -231,39 +255,40 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
                   </label>
                 </div>
                 {numberMode === 'manual' ? (
-                  <Input className="mt-2 max-w-xs" aria-label="Bill number" placeholder="e.g. the number printed on the physical bill" value={number} onChange={(e) => setNumber(e.target.value)} />
+                  <Input className="mt-2 max-w-xs" aria-label="Bill number" placeholder="e.g. invoice number" value={number} onChange={(e) => setNumber(e.target.value)} />
                 ) : (
                   <p className="mt-2 text-xs text-stone-500">
                     {mode === 'edit' && existing.data?.bill.bill_number_source === 'generated'
                       ? `Keeping ${number}.`
-                      : `A number with prefix “${type === 'ev' ? evPrefix : normalPrefix}” will be issued when you save.`}
+                      : `A number with prefix “${normalPrefix}” will be issued when you save.`}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-stone-500">Numbers are unique per bill type: Normal 52 and EV 52 can both exist.</p>
               </div>
 
-              <FormField label="Customer" required className="sm:col-span-2">
-                {(p) => (
-                  <Select
-                    {...p}
-                    value={customerId}
-                    onChange={(e) => {
-                      setCustomerId(e.target.value)
-                      const c = customers.data?.find((x) => x.id === e.target.value)
-                      if (c && !partyName) setPartyName(c.customer_name)
-                      if (c && !partyAddress) setPartyAddress(c.billing_address ?? '')
-                      if (c && !partyGstin) setPartyGstin(c.gstin ?? '')
-                    }}
-                  >
-                    <option value="">Select customer…</option>
-                    {customers.data?.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.customer_name}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </FormField>
+              {/* Customer with typing and dropdown support */}
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-stone-600">
+                  Customer <span className="text-red-600">*</span>
+                </label>
+                <CustomerCombobox
+                  value={customerId}
+                  customerName={customerName}
+                  customers={customers.data ?? []}
+                  onChange={(cid, name) => {
+                    setCustomerId(cid)
+                    setCustomerName(name)
+                    const c = customers.data?.find((x) => x.id === cid)
+                    if (c) {
+                      setPartyName(c.customer_name)
+                      if (c.billing_address) setPartyAddress(c.billing_address)
+                      if (c.gstin) setPartyGstin(c.gstin)
+                    } else if (name) {
+                      setPartyName(name)
+                    }
+                  }}
+                />
+              </div>
+
               <FormField label="Party name (as on the bill)">{(p) => <Input {...p} value={partyName} onChange={(e) => setPartyName(e.target.value)} />}</FormField>
               <FormField label="Party GSTIN">{(p) => <Input {...p} value={partyGstin} onChange={(e) => setPartyGstin(e.target.value)} />}</FormField>
               <FormField label="Party address" className="sm:col-span-2">
@@ -293,7 +318,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
           </Card>
 
           <Card>
-            <CardHeader title="Items" description="A line with only a description is allowed. Enter quantity and rate together." />
+            <CardHeader title="Items" description="Stone cut dimensions, pieces, unit and rate." />
             <div className="p-5">
               <LineItemsEditor lines={lines} onChange={setLines} units={units.data ?? []} />
             </div>
@@ -302,7 +327,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
 
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Tax & charges" description="Leave blank when not applicable — blank is stored as “not used”, not 0." />
+            <CardHeader title="Tax & charges" description="Leave blank when not applicable." />
             <div className="grid grid-cols-3 gap-3 p-5">
               <FormField label="CGST %">{(p) => <Input {...p} inputMode="decimal" value={cgst} onChange={(e) => setCgst(e.target.value)} />}</FormField>
               <FormField label="SGST %">{(p) => <Input {...p} inputMode="decimal" value={sgst} onChange={(e) => setSgst(e.target.value)} />}</FormField>
@@ -319,18 +344,18 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
               {preview.cgst !== null && <Line label="CGST" value={preview.cgst} />}
               {preview.sgst !== null && <Line label="SGST" value={preview.sgst} />}
               {preview.igst !== null && <Line label="IGST" value={preview.igst} />}
+              {optNum(other) !== null && <Line label="Other charges" value={optNum(other)} />}
               <div className="flex justify-between border-t border-stone-200 pt-2 text-base font-bold text-amber-700">
-                <dt>Grand total</dt>
+                <dt>Total</dt>
                 <dd>{formatINR(preview.total)}</dd>
               </div>
             </dl>
-            <p className="mt-3 text-xs text-stone-500">Preview only. The database computes and stores the final amounts when you save.</p>
           </section>
 
           <Card>
             <CardHeader title="Notes" />
             <div className="p-5">
-              <Textarea aria-label="Notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional note printed on the bill." />
             </div>
           </Card>
         </div>
@@ -339,7 +364,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
   )
 }
 
-function Line({ label, value }: { label: string; value: number }) {
+function Line({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="flex justify-between">
       <dt className="text-stone-500">{label}</dt>

@@ -45,16 +45,16 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-wrap gap-2.5">
             <Link
-              to={`${base}/bills/new?type=ev`}
+              to={`${base}/bills/new`}
               className="rounded-xl bg-gradient-to-r from-[#d4af37] via-[#c59b27] to-[#b8860b] px-4 py-2 text-sm font-bold text-white shadow-sm transition-all hover:brightness-105 active:scale-[0.98]"
             >
-              + New EV Bill
+              + New Bill
             </Link>
             <Link
-              to={`${base}/bills/new?type=normal`}
+              to={`${base}/quotations/new`}
               className="rounded-xl border border-[#d4af37]/40 bg-[#fbf8f0] px-4 py-2 text-sm font-bold text-[#7d5604] shadow-xs transition-all hover:bg-[#fae5a3]/40 active:scale-[0.98]"
             >
-              + New Normal Bill
+              + New Quotation
             </Link>
           </div>
         </div>

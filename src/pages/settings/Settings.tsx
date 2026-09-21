@@ -17,9 +17,10 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { cn } from '@/lib/utils'
 import { parseOptionalNumber } from '@/lib/format'
+import { seedDemoData, clearDemoData } from '@/services/demoData'
 import type { StaffProfile, Unit } from '@/types/db'
 
-type Tab = 'business' | 'users' | 'permissions' | 'numbering' | 'billing' | 'tax' | 'stock' | 'system'
+type Tab = 'business' | 'users' | 'permissions' | 'numbering' | 'billing' | 'tax' | 'stock' | 'system' | 'demo'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'business', label: 'Business' },
   { id: 'users', label: 'Users / staff' },
@@ -29,6 +30,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'tax', label: 'Tax' },
   { id: 'stock', label: 'Stock' },
   { id: 'system', label: 'System' },
+  { id: 'demo', label: 'Demo / Test Data' },
 ]
 
 export default function Settings() {
@@ -54,6 +56,7 @@ export default function Settings() {
           {tab === 'tax' && <TaxTab />}
           {tab === 'stock' && <StockTab />}
           {tab === 'system' && <SystemTab />}
+          {tab === 'demo' && <DemoTab />}
         </div>
       </div>
     </div>
@@ -106,10 +109,10 @@ function NumberingTab() {
   const [error, setError] = useState<string | null>(null)
   useEffect(() => setF((settings.data?.document_prefixes ?? {}) as Record<string, string>), [settings.data])
   if (settings.isLoading) return <Skeleton className="h-64" />
-  const labels: [string, string][] = [['quotation', 'Quotation'], ['normal_bill', 'Normal bill'], ['ev_bill', 'EV bill'], ['payment', 'Payment'], ['trip', 'Trip'], ['expense', 'Expense']]
+  const labels: [string, string][] = [['quotation', 'Quotation'], ['normal_bill', 'Bill'], ['payment', 'Payment'], ['trip', 'Trip'], ['expense', 'Expense']]
   return (
     <Card>
-      <CardHeader title="Document number prefixes" description="Used only for numbers the system generates: PREFIX-YEAR-000001. Normal bills may always carry an existing physical number instead. EV bill numbering is not defined by the business yet." />
+      <CardHeader title="Document number prefixes" description="Used only for numbers the system generates: PREFIX-YEAR-000001. Bills may always carry an existing physical number instead." />
       <div className="grid gap-4 p-5 sm:grid-cols-3">
         {labels.map(([k, l]) => <FormField key={k} label={l}>{(p) => <Input {...p} value={f[k] ?? ''} onChange={(e) => setF((s) => ({ ...s, [k]: e.target.value }))} />}</FormField>)}
       </div>
@@ -164,11 +167,9 @@ function BillingTab() {
       <CardHeader title="Billing rules" description="These are enforced by the database and are not configurable." />
       <ul className="list-disc space-y-2 p-5 pl-9 text-sm text-stone-700">
         <li>Bill totals are calculated by the database from the lines, discount, tax percentages and other charges — to the paisa (2 decimals).</li>
-        <li>A line is either descriptive (no quantity, rate or amount) or fully priced (quantity × rate).</li>
-        <li>Bill numbers are unique per bill type: Normal 52 and EV 52 can both exist.</li>
+        <li>A line is either descriptive (no quantity, rate or amount) or fully priced (pieces × rate).</li>
         <li>Posting a bill creates exactly one ledger debit and locks the bill. Cancelling keeps the bill on record and reverses the debit.</li>
         <li>Payment reversal and correcting a posted bill (other than cancel-and-reissue) are not defined by the business yet.</li>
-        <li>EV Bill specifics (format, extra fields, numbering) are pending the business's definition.</li>
       </ul>
     </Card>
   )
@@ -482,3 +483,90 @@ function SystemTab() {
     </Card>
   )
 }
+
+function DemoTab() {
+  const { client } = useBusinessContext()
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  async function handleSeed() {
+    if (!client) return setStatus({ type: 'error', message: 'Database client not connected.' })
+    setLoading(true)
+    setStatus(null)
+    try {
+      const res = await seedDemoData(client)
+      setStatus({ type: 'success', message: res.message })
+    } catch (e) {
+      setStatus({ type: 'error', message: e instanceof Error ? e.message : String(e) })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleClear() {
+    if (!client) return setStatus({ type: 'error', message: 'Database client not connected.' })
+    if (!window.confirm('Are you sure you want to remove all DEMO records?')) return
+    setLoading(true)
+    setStatus(null)
+    try {
+      const res = await clearDemoData(client)
+      setStatus({ type: 'success', message: res.message })
+    } catch (e) {
+      setStatus({ type: 'error', message: e instanceof Error ? e.message : String(e) })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        title="Stone Quarry Demo & Test Data"
+        description="Populate connected demo records to test all workflow components (Customers, Units, Materials, Stock, Vehicles, Drivers, Bills, Quotations, Measurements, Trips, Expenses). You can delete them anytime."
+      />
+      <div className="space-y-4 p-5">
+        {status && (
+          <div
+            className={cn(
+              'rounded-lg p-4 text-sm font-medium',
+              status.type === 'success' ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200' : 'bg-red-50 text-red-800 ring-1 ring-red-200',
+            )}
+          >
+            {status.message}
+          </div>
+        )}
+
+        <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 text-sm text-stone-800">
+          <h3 className="font-bold text-amber-900">What will be created:</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-stone-700">
+            <li><strong>Units</strong>: SQT (Sq. Feet), Tonne, Brass, CFT, Kg, Pieces</li>
+            <li><strong>Customers</strong>: Sri Murudeshwara Builders, Rajesh Kumar - Granite Crafts, Kaveri Infra</li>
+            <li><strong>Materials</strong>: Cut Stone Slabs 6380, Rough Granite Blocks, 20mm Jelly, M-Sand</li>
+            <li><strong>Transport</strong>: Tipper KA-47-M-1122, Dumper KA-20-B-3344 & Licensed Drivers</li>
+            <li><strong>Documents</strong>: Sample Quotation, Sales Bill, Measurement Sheet, Trip & Fuel Expense</li>
+          </ul>
+        </div>
+
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Button
+            variant="accent"
+            loading={loading}
+            onClick={handleSeed}
+            className="bg-gradient-to-r from-[#d4af37] via-[#c59b27] to-[#b8860b] font-bold text-white hover:brightness-105"
+          >
+            Load Stone Quarry Demo Data
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={loading}
+            onClick={handleClear}
+            className="border-stone-300 text-stone-600 hover:bg-red-50 hover:text-red-700"
+          >
+            Clear Demo Data
+          </Button>
+        </div>
+      </div>
+    </Card>
+  )
+}
+

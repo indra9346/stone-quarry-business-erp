@@ -101,7 +101,15 @@ function itemRows(billId: string, items: BillItemInput[]) {
   }))
 }
 
+async function ensureUnitsExist(c: SupabaseClient, items: BillItemInput[]) {
+  const unitsToEnsure = [...new Set(items.map((it) => it.unit).filter((u): u is string => !!u))]
+  for (const u of unitsToEnsure) {
+    await c.from('units').upsert({ code: u, label: u, measurement_kind: 'area' }, { onConflict: 'code', ignoreDuplicates: true })
+  }
+}
+
 export async function createBill(c: SupabaseClient, input: BillInput): Promise<Bill> {
+  await ensureUnitsExist(c, input.items)
   const bill = ok(await c.from('bills').insert(headerPayload(input)).select().single()) as Bill
   if (input.items.length > 0) {
     const res = await c.from('bill_items').insert(itemRows(bill.id, input.items))
@@ -116,6 +124,7 @@ export async function createBill(c: SupabaseClient, input: BillInput): Promise<B
 
 /** Draft bills only — the database freezes a posted/cancelled bill. */
 export async function updateBill(c: SupabaseClient, id: string, input: BillInput): Promise<void> {
+  await ensureUnitsExist(c, input.items)
   okVoid(await c.from('bills').update(headerPayload(input)).eq('id', id))
   okVoid(await c.from('bill_items').delete().eq('bill_id', id))
   if (input.items.length > 0) okVoid(await c.from('bill_items').insert(itemRows(id, input.items)))

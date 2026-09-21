@@ -4,10 +4,12 @@ import { useBusinessContext } from '@/features/auth/businessContextValue'
 import { useBizMutation, useBizQuery } from '@/hooks/useBiz'
 import { useCustomerPicker, usePrefix, useUnits } from '@/hooks/useLookups'
 import { generateNumber } from '@/services/bills'
+import { createCustomer } from '@/services/catalog'
 import { createQuotation, getQuotation, quotationTotals, updateQuotation, type QuotationInput } from '@/services/documents'
 import { Card, CardHeader, PageHeader } from '@/components/ui/layout'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
+import { CustomerCombobox } from '@/components/ui/CustomerCombobox'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import LineItemsEditor from '@/features/documents/LineItemsEditor'
 import { draftsToInputs, newLine, rowsToDrafts, type LineDraft } from '@/features/documents/lines'
@@ -20,7 +22,7 @@ const num = (s: string) => {
 }
 
 export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
-  const { code } = useBusinessContext()
+  const { code, client } = useBusinessContext()
   const { id } = useParams()
   const navigate = useNavigate()
   const units = useUnits()
@@ -31,6 +33,7 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
   const [numberMode, setNumberMode] = useState<'manual' | 'generated'>('generated')
   const [number, setNumber] = useState('')
   const [customerId, setCustomerId] = useState('')
+  const [customerName, setCustomerName] = useState('')
   const [date, setDate] = useState(todayIST())
   const [validUntil, setValidUntil] = useState('')
   const [status, setStatus] = useState<QuotationStatus>('draft')
@@ -50,6 +53,7 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
     setNumberMode('manual')
     setNumber(q.quotation_number)
     setCustomerId(q.customer_id)
+    setCustomerName(q.customers?.customer_name ?? '')
     setDate(q.quotation_date)
     setValidUntil(q.valid_until ?? '')
     setStatus(q.status)
@@ -81,7 +85,39 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
 
   async function submit() {
     const errs: string[] = []
-    if (!customerId) errs.push('Choose a customer.')
+
+    let finalCustomerId = customerId
+    if (!finalCustomerId && customerName.trim() && client) {
+      const match = customers.data?.find((c) => c.customer_name.trim().toLowerCase() === customerName.trim().toLowerCase())
+      if (match) {
+        finalCustomerId = match.id
+      } else {
+        try {
+          const newCust = await createCustomer(client, {
+            customer_name: customerName.trim(),
+            company_name: null,
+            phone: null,
+            alternate_phone: null,
+            email: null,
+            billing_address: null,
+            shipping_address: null,
+            city: null,
+            state: null,
+            pincode: null,
+            gstin: null,
+            notes: 'Registered from quotation',
+            status: 'active',
+          })
+          finalCustomerId = newCust.id
+          setCustomerId(newCust.id)
+          void customers.refetch()
+        } catch (e) {
+          return setErrors([`Could not save new customer: ${e instanceof Error ? e.message : String(e)}`])
+        }
+      }
+    }
+
+    if (!finalCustomerId) errs.push('Enter or choose a customer name.')
     if (numberMode === 'manual' && !number.trim()) errs.push('Enter the quotation number.')
     const { items, errors: lineErrors } = draftsToInputs(lines)
     errs.push(...lineErrors)
@@ -102,7 +138,7 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
     save.mutate(
       {
         quotation_number: quotationNumber,
-        customer_id: customerId,
+        customer_id: finalCustomerId,
         quotation_date: date,
         valid_until: validUntil || null,
         status,
@@ -160,17 +196,26 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
                 {numberMode === 'manual' ? (
                   <Input className="mt-2 max-w-xs" aria-label="Quotation number" value={number} onChange={(e) => setNumber(e.target.value)} />
                 ) : (
-                  <p className="mt-2 text-xs text-stone-500">A number with prefix “{prefix}” is issued on save. The business's own format is not confirmed yet.</p>
+                  <p className="mt-2 text-xs text-stone-500">A number with prefix “{prefix}” is issued on save.</p>
                 )}
               </div>
-              <FormField label="Customer" required className="sm:col-span-2">
-                {(p) => (
-                  <Select {...p} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-                    <option value="">Select customer…</option>
-                    {customers.data?.map((c) => <option key={c.id} value={c.id}>{c.customer_name}</option>)}
-                  </Select>
-                )}
-              </FormField>
+
+              {/* Customer with typing and dropdown support */}
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-stone-600">
+                  Customer <span className="text-red-600">*</span>
+                </label>
+                <CustomerCombobox
+                  value={customerId}
+                  customerName={customerName}
+                  customers={customers.data ?? []}
+                  onChange={(cid, name) => {
+                    setCustomerId(cid)
+                    setCustomerName(name)
+                  }}
+                />
+              </div>
+
               <FormField label="Date" required>{(p) => <Input {...p} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}</FormField>
               <FormField label="Valid until (optional)">{(p) => <Input {...p} type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />}</FormField>
               <FormField label="Status">
@@ -186,7 +231,7 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
             </div>
           </Card>
           <Card>
-            <CardHeader title="Items" description="A line with only a description is allowed. Enter quantity and rate together." />
+            <CardHeader title="Items" description="Stone cut dimensions, pieces, unit and rate." />
             <div className="p-5"><LineItemsEditor lines={lines} onChange={setLines} units={units.data ?? []} /></div>
           </Card>
           <Card>
@@ -199,7 +244,7 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
         </div>
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Adjustments" description="Amounts in ₹. Tax is entered as an amount — the business's quotation tax rules are not defined yet." />
+            <CardHeader title="Adjustments" description="Amounts in ₹." />
             <div className="grid gap-4 p-5">
               <FormField label="Discount">{(p) => <Input {...p} inputMode="decimal" value={discount} onChange={(e) => setDiscount(e.target.value)} />}</FormField>
               <FormField label="Tax">{(p) => <Input {...p} inputMode="decimal" value={tax} onChange={(e) => setTax(e.target.value)} />}</FormField>

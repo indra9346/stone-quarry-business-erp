@@ -85,7 +85,15 @@ function qItems(id: string, items: BillItemInput[]) {
   }))
 }
 
+async function ensureUnitsExist(c: SupabaseClient, items: BillItemInput[]) {
+  const unitsToEnsure = [...new Set(items.map((it) => it.unit).filter((u): u is string => !!u))]
+  for (const u of unitsToEnsure) {
+    await c.from('units').upsert({ code: u, label: u, measurement_kind: 'area' }, { onConflict: 'code', ignoreDuplicates: true })
+  }
+}
+
 export async function createQuotation(c: SupabaseClient, input: QuotationInput): Promise<Quotation> {
+  await ensureUnitsExist(c, input.items)
   const q = ok(await c.from('quotations').insert(qHeader(input)).select().single()) as Quotation
   if (input.items.length > 0) {
     const res = await c.from('quotation_items').insert(qItems(q.id, input.items))
@@ -98,6 +106,7 @@ export async function createQuotation(c: SupabaseClient, input: QuotationInput):
 }
 
 export async function updateQuotation(c: SupabaseClient, id: string, input: QuotationInput): Promise<void> {
+  await ensureUnitsExist(c, input.items)
   okVoid(await c.from('quotations').update(qHeader(input)).eq('id', id))
   okVoid(await c.from('quotation_items').delete().eq('quotation_id', id))
   if (input.items.length > 0) okVoid(await c.from('quotation_items').insert(qItems(id, input.items)))

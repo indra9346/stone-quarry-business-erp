@@ -80,8 +80,8 @@ export default function App() {
 
                 <Route element={<RequireModule module="bills" />}>
                   <Route path="bills" element={<Suspense fallback={<PageFallback />}><BillList /></Suspense>} />
-                  <Route path="bills/ev" element={<Suspense fallback={<PageFallback />}><BillList type="ev" /></Suspense>} />
-                  <Route path="bills/normal" element={<Suspense fallback={<PageFallback />}><BillList type="normal" /></Suspense>} />
+                  <Route path="bills/ev" element={<Navigate to="../bills" replace />} />
+                  <Route path="bills/normal" element={<Navigate to="../bills" replace />} />
                   <Route path="bills/new" element={<Suspense fallback={<PageFallback />}><BillForm mode="create" /></Suspense>} />
                   <Route path="bills/:id" element={<Suspense fallback={<PageFallback />}><BillDetail /></Suspense>} />
                   <Route path="bills/:id/edit" element={<Suspense fallback={<PageFallback />}><BillForm mode="edit" /></Suspense>} />

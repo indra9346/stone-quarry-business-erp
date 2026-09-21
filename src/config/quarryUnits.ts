@@ -7,6 +7,7 @@ import type { Unit } from '@/types/db'
  * applied anywhere (quantities are always kept in the unit they were entered in).
  */
 export const COMMON_QUARRY_UNITS: Unit[] = [
+  { code: 'SQT', label: 'SQT (Square Feet)', measurement_kind: 'area' },
   { code: 't', label: 'Tonne', measurement_kind: 'weight' },
   { code: 'kg', label: 'Kilogram', measurement_kind: 'weight' },
   { code: 'm3', label: 'Cubic metre', measurement_kind: 'volume' },

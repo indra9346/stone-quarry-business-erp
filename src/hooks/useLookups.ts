@@ -44,8 +44,8 @@ export function useBusinessLetterhead(): BusinessProfileSetting {
 }
 
 /** Prefix configured in settings.document_prefixes for numbers the system generates. */
-export function usePrefix(kind: 'quotation' | 'normal_bill' | 'ev_bill' | 'payment' | 'trip' | 'expense'): string {
+export function usePrefix(kind: 'quotation' | 'normal_bill' | 'payment' | 'trip' | 'expense'): string {
   const settings = useSettings()
   const prefixes = (settings.data?.document_prefixes ?? {}) as Record<string, string>
-  return prefixes[kind] || { quotation: 'QT', normal_bill: 'INV', ev_bill: 'EV', payment: 'PAY', trip: 'TRP', expense: 'EXP' }[kind]
+  return prefixes[kind] || { quotation: 'QT', normal_bill: 'INV', payment: 'PAY', trip: 'TRP', expense: 'EXP' }[kind]
 }
