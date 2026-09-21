@@ -50,22 +50,22 @@ describe('Stone Quarry Document Lines & Dimensions', () => {
       { description: '5 × 10 × 8', hsn_code: '6380', quantity: 15, unit: 'SQT', rate: 100 },
     ]
     const drafts = rowsToDrafts(rows)
-    expect(drafts[0].feet).toBe('10')
-    expect(drafts[0].inches1).toBe('12')
-    expect(drafts[0].inches2).toBe('6')
-    expect(drafts[0].quantity).toBe('25')
+    expect(drafts[0]?.feet).toBe('10')
+    expect(drafts[0]?.inches1).toBe('12')
+    expect(drafts[0]?.inches2).toBe('6')
+    expect(drafts[0]?.quantity).toBe('25')
 
-    expect(drafts[1].feet).toBe('5')
-    expect(drafts[1].inches1).toBe('10')
-    expect(drafts[1].inches2).toBe('8')
+    expect(drafts[1]?.feet).toBe('5')
+    expect(drafts[1]?.inches1).toBe('10')
+    expect(drafts[1]?.inches2).toBe('8')
   })
 
   it('provides default stone description when dimensions are omitted', () => {
     const line = newLine({ quantity: '5', rate: '200' })
     const { items, errors } = draftsToInputs([line])
     expect(errors).toHaveLength(0)
-    expect(items[0].description).toBe('Stone Slabs / Blocks')
-    expect(items[0].hsn_code).toBe('6380')
-    expect(items[0].unit).toBe('SQT')
+    expect(items[0]?.description).toBe('Stone Slabs / Blocks')
+    expect(items[0]?.hsn_code).toBe('6380')
+    expect(items[0]?.unit).toBe('SQT')
   })
 })
