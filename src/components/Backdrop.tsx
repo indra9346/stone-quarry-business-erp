@@ -2,7 +2,7 @@ import { useId, useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import ParallaxPhoto from './ParallaxPhoto'
 import Quarry3DScene from './Quarry3DScene'
-import { Video, ShieldCheck, Activity } from 'lucide-react'
+import { Video, Activity } from 'lucide-react'
 
 interface BackdropProps {
   className?: string

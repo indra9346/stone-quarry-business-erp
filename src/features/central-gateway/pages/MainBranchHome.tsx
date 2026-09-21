@@ -4,7 +4,7 @@ import { isBusinessConfigured } from '@/lib/supabase/business-client'
 import Backdrop from '@/components/Backdrop'
 import { cn } from '@/lib/utils'
 import { useDarkPage } from '@/hooks/useDarkPage'
-import { ArrowRight, Layers, Truck, Cpu, FileText, CheckCircle2, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Layers, Truck, Cpu, FileText, ShieldCheck } from 'lucide-react'
 
 /**
  * Central gateway. Static business metadata only — no operational data is
