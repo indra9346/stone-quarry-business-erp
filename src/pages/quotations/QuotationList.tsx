@@ -53,7 +53,7 @@ export default function QuotationList() {
               load={(c) => fetchAllPages((p) => listQuotations(c, { q: dq, status: status || undefined, from: range.from || undefined, to: range.to || undefined, page: p }))}
             />
           <WhenCan module="quotations">
-            <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-semibold text-navy-950 hover:bg-amber-400">
+            <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-bold text-slate-900 shadow-sm hover:bg-amber-400">
               <Plus className="h-4 w-4" /> New quotation
             </Link>
           </WhenCan>

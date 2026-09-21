@@ -48,7 +48,7 @@ export function MeasurementList() {
         description="Independent documents, stored exactly as written. They are not linked to bills, quotations, payments, the ledger or stock."
         actions={
           <WhenCan module="measurements">
-            <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-semibold text-navy-950 hover:bg-amber-400">
+            <Link to={`${base}/new`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-bold text-slate-900 shadow-sm hover:bg-amber-400">
               <Plus className="h-4 w-4" /> New sheet
             </Link>
           </WhenCan>
@@ -241,13 +241,13 @@ export function MeasurementForm({ mode }: { mode: 'create' | 'edit' }) {
               <FormField label="Notes">{(p) => <Textarea {...p} value={notes} onChange={(e) => setNotes(e.target.value)} />}</FormField>
             </div>
           </Card>
-          <section className="rounded-lg bg-navy-900 p-5 text-stone-200 shadow-card">
-            <h2 className="text-sm font-semibold text-white">Arithmetic check</h2>
-            <p className="mt-1 text-xs text-stone-400">A convenience only — it never changes what is stored.</p>
+          <section className="rounded-xl border border-stone-200 bg-white p-5 text-stone-800 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-900">Arithmetic check</h2>
+            <p className="mt-1 text-xs text-stone-500">A convenience only — it never changes what is stored.</p>
             <dl className="tabular mt-3 space-y-1.5 text-sm">
-              <div className="flex justify-between"><dt className="text-stone-400">Sum of row amounts</dt><dd>{check.has ? formatINR(check.sum) : '—'}</dd></div>
-              <div className="flex justify-between"><dt className="text-stone-400">Total as written</dt><dd>{formatINR(parseOptionalNumber(statedTotal))}</dd></div>
-              <div className="flex justify-between border-t border-white/10 pt-2 font-semibold text-amber-400"><dt>Difference</dt><dd>{check.diff === null ? '—' : formatINR(check.diff)}</dd></div>
+              <div className="flex justify-between"><dt className="text-stone-500">Sum of row amounts</dt><dd className="font-medium text-slate-800">{check.has ? formatINR(check.sum) : '—'}</dd></div>
+              <div className="flex justify-between"><dt className="text-stone-500">Total as written</dt><dd className="font-medium text-slate-800">{formatINR(parseOptionalNumber(statedTotal))}</dd></div>
+              <div className="flex justify-between border-t border-stone-200 pt-2 font-bold text-amber-700"><dt>Difference</dt><dd>{check.diff === null ? '—' : formatINR(check.diff)}</dd></div>
             </dl>
           </section>
         </div>

@@ -62,10 +62,10 @@ export default function BillList({ type }: { type?: BillType }) {
               load={(c) => fetchAllPages((p) => listBills(c, { type, q: dq, state, from: range.from || undefined, to: range.to || undefined, page: p }))}
             />
             <WhenCan module="bills">
-            <Link to={`${base}/new?type=normal`} className="inline-flex h-9 items-center gap-2 rounded-md bg-navy-800 px-4 text-sm font-medium text-white hover:bg-navy-700">
+            <Link to={`${base}/new?type=normal`} className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-800 px-4 text-sm font-medium text-white hover:bg-slate-700 shadow-sm">
               <Plus className="h-4 w-4" /> Normal bill
             </Link>
-            <Link to={`${base}/new?type=ev`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-semibold text-navy-950 hover:bg-amber-400">
+            <Link to={`${base}/new?type=ev`} className="inline-flex h-9 items-center gap-2 rounded-md bg-amber-500 px-4 text-sm font-bold text-slate-900 hover:bg-amber-400 shadow-sm">
               <Plus className="h-4 w-4" /> EV bill
             </Link>
             </WhenCan>

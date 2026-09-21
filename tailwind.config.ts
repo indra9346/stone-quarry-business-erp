@@ -7,20 +7,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Industrial command-center palette. Dark navy for navigation and
-        // command surfaces; light slate/white for working content; amber is
-        // the quarry accent, cyan the data accent.
+        // Industrial command-center palette: modern quarry slate & stone for navigation;
+        // warm travertine and crisp stone for working surfaces; golden amber quarry accent.
         navy: {
-          950: '#0e0d0b',
-          900: '#191715',
-          800: '#242120',
-          700: '#332f2c',
-          600: '#4a443f',
+          950: '#1e293b',
+          900: '#334155',
+          850: '#293548',
+          800: '#475569',
+          700: '#64748b',
+          600: '#94a3b8',
         },
         graphite: {
-          900: '#15181d',
-          800: '#1f232b',
-          700: '#2a2f3a',
+          900: '#1e293b',
+          800: '#334155',
+          700: '#475569',
         },
         amber: {
           400: '#f2b544',

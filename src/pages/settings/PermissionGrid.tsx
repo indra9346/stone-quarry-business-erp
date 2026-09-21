@@ -55,7 +55,7 @@ export function PermissionGrid({
                             ? lvl === 'none'
                               ? 'bg-stone-700 text-white'
                               : lvl === 'view'
-                                ? 'bg-amber-500 text-navy-950'
+                                ? 'bg-amber-500 text-slate-900 font-bold'
                                 : 'bg-emerald-600 text-white'
                             : 'bg-white text-stone-600 hover:bg-stone-50',
                         )}

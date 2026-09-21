@@ -312,19 +312,19 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
             </div>
           </Card>
 
-          <section className="rounded-lg bg-navy-900 p-5 text-stone-200 shadow-card">
-            <h2 className="text-sm font-semibold text-white">Total preview</h2>
+          <section className="rounded-xl border border-stone-200 bg-white p-5 text-stone-800 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-900">Total preview</h2>
             <dl className="tabular mt-3 space-y-1.5 text-sm">
               <Line label="Taxable value" value={preview.taxable} />
               {preview.cgst !== null && <Line label="CGST" value={preview.cgst} />}
               {preview.sgst !== null && <Line label="SGST" value={preview.sgst} />}
               {preview.igst !== null && <Line label="IGST" value={preview.igst} />}
-              <div className="flex justify-between border-t border-white/10 pt-2 text-base font-semibold text-amber-400">
+              <div className="flex justify-between border-t border-stone-200 pt-2 text-base font-bold text-amber-700">
                 <dt>Grand total</dt>
                 <dd>{formatINR(preview.total)}</dd>
               </div>
             </dl>
-            <p className="mt-3 text-xs text-stone-400">Preview only. The database computes and stores the final amounts when you save.</p>
+            <p className="mt-3 text-xs text-stone-500">Preview only. The database computes and stores the final amounts when you save.</p>
           </section>
 
           <Card>
@@ -342,8 +342,8 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
 function Line({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex justify-between">
-      <dt className="text-stone-400">{label}</dt>
-      <dd>{formatINR(value)}</dd>
+      <dt className="text-stone-500">{label}</dt>
+      <dd className="font-medium text-slate-800">{formatINR(value)}</dd>
     </div>
   )
 }

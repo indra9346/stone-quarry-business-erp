@@ -206,11 +206,11 @@ export default function QuotationForm({ mode }: { mode: 'create' | 'edit' }) {
               <FormField label="Other charges">{(p) => <Input {...p} inputMode="decimal" value={other} onChange={(e) => setOther(e.target.value)} />}</FormField>
             </div>
           </Card>
-          <section className="rounded-lg bg-navy-900 p-5 text-stone-200 shadow-card">
-            <h2 className="text-sm font-semibold text-white">Totals</h2>
+          <section className="rounded-xl border border-stone-200 bg-white p-5 text-stone-800 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-900">Totals</h2>
             <dl className="tabular mt-3 space-y-1.5 text-sm">
-              <div className="flex justify-between"><dt className="text-stone-400">Subtotal</dt><dd>{formatINR(totals.subtotal)}</dd></div>
-              <div className="flex justify-between border-t border-white/10 pt-2 text-base font-semibold text-amber-400"><dt>Total</dt><dd>{formatINR(totals.grand_total)}</dd></div>
+              <div className="flex justify-between"><dt className="text-stone-500">Subtotal</dt><dd className="font-medium text-slate-800">{formatINR(totals.subtotal)}</dd></div>
+              <div className="flex justify-between border-t border-stone-200 pt-2 text-base font-bold text-amber-700"><dt>Total</dt><dd>{formatINR(totals.grand_total)}</dd></div>
             </dl>
           </section>
         </div>

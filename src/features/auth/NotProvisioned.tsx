@@ -18,7 +18,7 @@ export default function NotProvisioned() {
       <p className="mt-2 text-sm text-stone-600">Contact the system administrator after the business database is connected.</p>
       <Link
         to="/"
-        className="mt-6 inline-flex h-9 w-full items-center justify-center rounded-md bg-navy-800 px-4 text-sm font-medium text-white transition-colors hover:bg-navy-700"
+        className="mt-6 inline-flex h-9.5 w-full items-center justify-center rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 text-sm font-bold text-white shadow-sm transition-all hover:brightness-105 active:scale-[0.98]"
       >
         Back to Business Gateway
       </Link>

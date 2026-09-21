@@ -10,8 +10,8 @@ export function useDarkPage() {
     const html = document.documentElement
     const body = document.body
     const prev = { h: html.style.backgroundColor, b: body.style.backgroundColor, o: html.style.overscrollBehaviorY }
-    html.style.backgroundColor = '#0e0d0b'
-    body.style.backgroundColor = '#0e0d0b'
+    html.style.backgroundColor = '#1e293b'
+    body.style.backgroundColor = '#1e293b'
     html.style.overscrollBehaviorY = 'none'
     return () => {
       html.style.backgroundColor = prev.h

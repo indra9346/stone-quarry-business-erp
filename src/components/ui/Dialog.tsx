@@ -26,7 +26,7 @@ export function Modal({
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/60 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-slate-900/35 backdrop-blur-xs data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <RadixDialog.Content
           className={cn(
             'fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-1.5rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg bg-white shadow-lift data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',

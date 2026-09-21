@@ -57,7 +57,13 @@ function PageFallback() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="min-h-screen bg-navy-950" />}>
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center stone-bg">
+            <div className="h-8 w-8 animate-spin rounded-full border-3 border-amber-500 border-t-transparent" />
+          </div>
+        }
+      >
         <Routes>
           <Route path="/" element={<MainBranchHome />} />
           <Route path="/businesses" element={<Navigate to="/" replace />} />

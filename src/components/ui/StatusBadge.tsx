@@ -11,7 +11,7 @@ const tones: Record<Tone, string> = {
   success: 'bg-emerald-50 text-emerald-800 ring-emerald-600/20',
   warning: 'bg-amber-50 text-amber-800 ring-amber-600/25',
   danger: 'bg-red-50 text-red-800 ring-red-600/20',
-  accent: 'bg-navy-800 text-amber-400 ring-white/10',
+  accent: 'bg-amber-100 text-amber-900 ring-amber-500/30',
 }
 
 export function StatusBadge({ tone = 'neutral', children, className }: { tone?: Tone; children: ReactNode; className?: string }) {

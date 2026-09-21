@@ -3,10 +3,10 @@ import { cn } from '@/lib/utils'
 
 export default function NotFound({ inShell }: { inShell?: boolean }) {
   return (
-    <div className={cn('flex flex-col items-center justify-center gap-3 text-center', inShell ? 'py-24 text-stone-600' : 'min-h-screen bg-navy-950 text-stone-300')}>
-      <p className="text-sm text-stone-500">404</p>
-      <p className="text-lg font-semibold">Page not found</p>
-      <Link to={inShell ? '../dashboard' : '/'} className={cn('text-sm hover:underline', inShell ? 'text-amber-800' : 'text-amber-400')}>
+    <div className={cn('flex flex-col items-center justify-center gap-3 text-center', inShell ? 'py-24 text-stone-600' : 'min-h-screen stone-bg text-slate-800')}>
+      <p className="text-sm font-semibold uppercase tracking-wider text-amber-600">404</p>
+      <p className="text-xl font-bold text-slate-900">Page not found</p>
+      <Link to={inShell ? '../dashboard' : '/'} className="text-sm font-semibold text-amber-700 hover:text-amber-900 hover:underline">
         {inShell ? 'Back to dashboard' : 'Return to the central gateway'}
       </Link>
     </div>

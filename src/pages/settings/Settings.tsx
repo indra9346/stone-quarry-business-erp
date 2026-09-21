@@ -40,7 +40,7 @@ export default function Settings() {
         <nav className="flex gap-1 overflow-x-auto lg:flex-col" aria-label="Settings sections">
           {TABS.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)} aria-current={tab === t.id}
-              className={cn('whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-medium transition-colors', tab === t.id ? 'bg-navy-800 text-white' : 'text-stone-600 hover:bg-stone-200/70')}>
+              className={cn('whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-medium transition-colors', tab === t.id ? 'bg-slate-800 text-white font-semibold shadow-xs' : 'text-stone-600 hover:bg-stone-200/70')}>
               {t.label}
             </button>
           ))}
