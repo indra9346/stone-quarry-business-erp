@@ -99,7 +99,6 @@ export function BillDocument({
         </div>
         <div className="space-y-1">
           <Kv label="Vehicle No.">{bill.vehicle_number}</Kv>
-          <Kv label="E-Way Bill No.">{bill.eway_bill_number}</Kv>
         </div>
       </div>
 

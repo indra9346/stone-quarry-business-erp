@@ -241,7 +241,6 @@ export default function BillDetail() {
                 <Field label="Party address">{bill.party_address ?? '—'}</Field>
                 <Field label="Party GSTIN">{bill.party_gstin ?? '—'}</Field>
                 <Field label="Vehicle no.">{bill.vehicle_number ?? '—'}</Field>
-                <Field label="E-Way Bill no.">{bill.eway_bill_number ?? '—'}</Field>
                 <Field label="Notes">{bill.notes ?? '—'}</Field>
               </dl>
             </Card>

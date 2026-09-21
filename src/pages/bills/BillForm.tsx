@@ -41,7 +41,6 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
   const [partyName, setPartyName] = useState('')
   const [partyAddress, setPartyAddress] = useState('')
   const [partyGstin, setPartyGstin] = useState('')
-  const [eway, setEway] = useState('')
   const [vehicleNumber, setVehicleNumber] = useState('')
   const [vehicleId, setVehicleId] = useState('')
   const [cgst, setCgst] = useState('')
@@ -66,7 +65,6 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
     setPartyName(b.party_name ?? '')
     setPartyAddress(b.party_address ?? '')
     setPartyGstin(b.party_gstin ?? '')
-    setEway(b.eway_bill_number ?? '')
     setVehicleNumber(b.vehicle_number ?? '')
     setVehicleId(b.vehicle_id ?? '')
     setCgst(b.cgst_percent === null ? '' : String(b.cgst_percent))
@@ -176,7 +174,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
       party_name: partyName.trim() || customerName.trim() || null,
       party_address: partyAddress.trim() || null,
       party_gstin: partyGstin.trim() || null,
-      eway_bill_number: eway.trim() || null,
+      eway_bill_number: null,
       vehicle_number: vehicleNumber.trim() || null,
       vehicle_id: vehicleId || null,
       cgst_percent: optNum(cgst),
@@ -300,7 +298,7 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
 
           <Card>
             <CardHeader title="Transport" description="Optional." />
-            <div className="grid gap-4 p-5 sm:grid-cols-3">
+            <div className="grid gap-4 p-5 sm:grid-cols-2">
               <FormField label="Vehicle number (as written)">{(p) => <Input {...p} value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} />}</FormField>
               <div>
                 <label className="mb-1 block text-xs font-medium text-stone-600">
@@ -326,7 +324,6 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
                   ]}
                 />
               </div>
-              <FormField label="E-Way Bill no.">{(p) => <Input {...p} value={eway} onChange={(e) => setEway(e.target.value)} />}</FormField>
             </div>
           </Card>
 
