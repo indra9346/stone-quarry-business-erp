@@ -7,8 +7,9 @@ import { createBill, generateNumber, getBill, lineAmount, updateBill, type BillI
 import { createCustomer } from '@/services/catalog'
 import { Card, CardHeader, PageHeader } from '@/components/ui/layout'
 import { Button } from '@/components/ui/Button'
-import { FormField, Input, Select, Textarea } from '@/components/ui/form'
+import { FormField, Input, Textarea } from '@/components/ui/form'
 import { CustomerCombobox } from '@/components/ui/CustomerCombobox'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import LineItemsEditor from '@/features/documents/LineItemsEditor'
 import { draftsToInputs, newLine, rowsToDrafts, type LineDraft } from '@/features/documents/lines'
@@ -301,18 +302,30 @@ export default function BillForm({ mode }: { mode: 'create' | 'edit' }) {
             <CardHeader title="Transport" description="Optional." />
             <div className="grid gap-4 p-5 sm:grid-cols-3">
               <FormField label="Vehicle number (as written)">{(p) => <Input {...p} value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} />}</FormField>
-              <FormField label="Vehicle (from master)">
-                {(p) => (
-                  <Select {...p} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
-                    <option value="">—</option>
-                    {vehicles.data?.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.registration_number}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </FormField>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-stone-600">
+                  Vehicle (from master)
+                </label>
+                <SearchableSelect
+                  value={vehicleId}
+                  onChange={(val) => {
+                    setVehicleId(val)
+                    if (val && !vehicleNumber) {
+                      const match = vehicles.data?.find((v) => v.id === val)
+                      if (match) setVehicleNumber(match.registration_number)
+                    }
+                  }}
+                  placeholder="Select vehicle…"
+                  options={[
+                    { value: '', label: '— None —' },
+                    ...(vehicles.data ?? []).map((v) => ({
+                      value: v.id,
+                      label: v.registration_number,
+                      sublabel: v.vehicle_type || undefined,
+                    })),
+                  ]}
+                />
+              </div>
               <FormField label="E-Way Bill no.">{(p) => <Input {...p} value={eway} onChange={(e) => setEway(e.target.value)} />}</FormField>
             </div>
           </Card>

@@ -141,6 +141,6 @@ export async function staffNames(c: SupabaseClient): Promise<Record<string, stri
   return Object.fromEntries(rows.map((r) => [r.user_id, r.full_name]))
 }
 
-export async function pickVehicles(c: SupabaseClient): Promise<Pick<Vehicle, 'id' | 'registration_number'>[]> {
-  return ok(await c.from('vehicles').select('id, registration_number').neq('status', 'inactive').order('registration_number'))
+export async function pickVehicles(c: SupabaseClient): Promise<Pick<Vehicle, 'id' | 'registration_number' | 'vehicle_type'>[]> {
+  return ok(await c.from('vehicles').select('id, registration_number, vehicle_type').neq('status', 'inactive').order('registration_number'))
 }

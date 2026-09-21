@@ -11,7 +11,8 @@ import { PAGE_SIZE } from '@/services/common'
 import { Card, CardHeader, CurrencyDisplay, FilterBar, PageHeader, PDFButton, PrintButton, SearchBar } from '@/components/ui/layout'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { Button } from '@/components/ui/Button'
-import { FormField, Input, Select, Textarea } from '@/components/ui/form'
+import { FormField, Input, Textarea } from '@/components/ui/form'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { MeasurementDocument } from '@/components/documents/documents'
 import { formatDate, formatINR, parseOptionalNumber } from '@/lib/format'
@@ -197,14 +198,24 @@ export function MeasurementForm({ mode }: { mode: 'create' | 'edit' }) {
             <FormField label="Sheet no.">{(p) => <Input {...p} value={sheetNumber} onChange={(e) => setSheetNumber(e.target.value)} />}</FormField>
             <FormField label="Date">{(p) => <Input {...p} type="date" value={sheetDate} onChange={(e) => setSheetDate(e.target.value)} />}</FormField>
             <FormField label="To (as written)">{(p) => <Input {...p} value={partyName} onChange={(e) => setPartyName(e.target.value)} />}</FormField>
-            <FormField label="Customer record (optional)" hint="Only if you are sure — not inferred from the name.">
-              {(p) => (
-                <Select {...p} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-                  <option value="">None</option>
-                  {customers.data?.map((c) => <option key={c.id} value={c.id}>{c.customer_name}</option>)}
-                </Select>
-              )}
-            </FormField>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                Customer record (optional)
+              </label>
+              <SearchableSelect
+                value={customerId}
+                onChange={setCustomerId}
+                placeholder="Search or select customer…"
+                options={[
+                  { value: '', label: 'None' },
+                  ...(customers.data ?? []).map((c) => ({
+                    value: c.id,
+                    label: c.customer_name,
+                    sublabel: c.gstin ? `GST: ${c.gstin}` : c.billing_address || undefined,
+                  })),
+                ]}
+              />
+            </div>
           </div>
         </Card>
         <Card>

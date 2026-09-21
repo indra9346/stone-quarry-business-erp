@@ -66,6 +66,7 @@ export function QuotationStatusBadge({ status }: { status: QuotationStatus }) {
   return <StatusBadge tone={qTone[status]}>{status.charAt(0).toUpperCase() + status.slice(1)}</StatusBadge>
 }
 
-export function BillTypeBadge({ type }: { type: Bill['bill_type'] }) {
-  return <StatusBadge tone={type === 'ev' ? 'accent' : 'neutral'}>{type === 'ev' ? 'EV Bill' : 'Normal Bill'}</StatusBadge>
+export function BillTypeBadge(_props: { type?: Bill['bill_type'] }) {
+  return null
 }
+

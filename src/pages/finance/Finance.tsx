@@ -18,6 +18,7 @@ import { Modal } from '@/components/ui/Dialog'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
 import { EmptyState } from '@/components/ui/feedback'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import RecordPaymentDialog from '@/features/payments/RecordPaymentDialog'
 import { formatDate, formatTime, parseOptionalNumber, todayIST } from '@/lib/format'
 import type { ExpenseCategory, LedgerEntry, PaymentMode } from '@/types/db'
@@ -56,13 +57,22 @@ export function PaymentsPage() {
       />
       <Card>
         <FilterBar>
-          <label className="block text-xs font-medium text-stone-600">
-            Customer
-            <Select className="mt-1 w-56" value={customerId} onChange={(e) => { setCustomerId(e.target.value); setPage(0) }}>
-              <option value="">All customers</option>
-              {customers.data?.map((c) => <option key={c.id} value={c.id}>{c.customer_name}</option>)}
-            </Select>
-          </label>
+          <div className="w-56">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Customer</span>
+            <SearchableSelect
+              value={customerId}
+              onChange={(val) => { setCustomerId(val); setPage(0) }}
+              placeholder="All customers"
+              options={[
+                { value: '', label: 'All customers' },
+                ...(customers.data ?? []).map((c) => ({
+                  value: c.id,
+                  label: c.customer_name,
+                  sublabel: c.gstin ? `GST: ${c.gstin}` : c.billing_address || undefined,
+                })),
+              ]}
+            />
+          </div>
           <DateRangePicker from={range.from} to={range.to} onChange={(r) => { setRange(r); setPage(0) }} />
         </FilterBar>
         <DataTable
@@ -128,13 +138,19 @@ export function LedgerPage() {
       />
       <Card>
         <FilterBar>
-          <label className="block text-xs font-medium text-stone-600">
-            Customer
-            <Select className="mt-1 w-64" value={customerId} onChange={(e) => { setCustomerId(e.target.value); setPage(0) }}>
-              <option value="">Select a customer…</option>
-              {customers.data?.map((c) => <option key={c.id} value={c.id}>{c.customer_name}</option>)}
-            </Select>
-          </label>
+          <div className="w-64">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Customer</span>
+            <SearchableSelect
+              value={customerId}
+              onChange={(val) => { setCustomerId(val); setPage(0) }}
+              placeholder="Select a customer…"
+              options={(customers.data ?? []).map((c) => ({
+                value: c.id,
+                label: c.customer_name,
+                sublabel: c.gstin ? `GST: ${c.gstin}` : c.billing_address || undefined,
+              }))}
+            />
+          </div>
           <DateRangePicker from={range.from} to={range.to} onChange={(r) => { setRange(r); setPage(0) }} />
         </FilterBar>
         {!customerId ? (
@@ -233,13 +249,22 @@ export function ExpensesPage() {
               {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
             </Select>
           </label>
-          <label className="block text-xs font-medium text-stone-600">
-            Vehicle
-            <Select className="mt-1 w-44" value={vehicleId} onChange={(e) => { setVehicleId(e.target.value); setPage(0) }}>
-              <option value="">All</option>
-              {(vehicles.data ?? []).map((v) => <option key={v.id} value={v.id}>{v.registration_number}</option>)}
-            </Select>
-          </label>
+          <div className="w-48">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Vehicle</span>
+            <SearchableSelect
+              value={vehicleId}
+              onChange={(val) => { setVehicleId(val); setPage(0) }}
+              placeholder="All vehicles"
+              options={[
+                { value: '', label: 'All vehicles' },
+                ...(vehicles.data ?? []).map((v) => ({
+                  value: v.id,
+                  label: v.registration_number,
+                  sublabel: v.vehicle_type || undefined,
+                })),
+              ]}
+            />
+          </div>
           <DateRangePicker from={range.from} to={range.to} onChange={(r) => { setRange(r); setPage(0) }} />
         </FilterBar>
         <DataTable columns={columns} rows={list.data?.rows} rowKey={(e) => e.id} loading={list.isLoading} error={list.error} onRetry={() => void list.refetch()}
@@ -287,7 +312,25 @@ function ExpenseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
         <FormField label="Amount (₹)" required>{(p) => <Input {...p} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />}</FormField>
         <FormField label="Date" required>{(p) => <Input {...p} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}</FormField>
         <FormField label="Time">{(p) => <Input {...p} type="time" value={time} onChange={(e) => setTime(e.target.value)} />}</FormField>
-        <FormField label="Vehicle" hint="Optional: choose one when the expense is for a particular vehicle (fuel, repairs, tyres...)." className="sm:col-span-2">{(p) => <Select {...p} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}><option value="">Not for a vehicle</option>{(vehicles.data ?? []).map((v) => <option key={v.id} value={v.id}>{v.registration_number}</option>)}</Select>}</FormField>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-stone-600">
+            Vehicle
+            <span className="ml-1 text-[11px] font-normal text-stone-400">(Optional: fuel, repairs, tyres...)</span>
+          </label>
+          <SearchableSelect
+            value={vehicleId}
+            onChange={setVehicleId}
+            placeholder="Not for a vehicle"
+            options={[
+              { value: '', label: 'Not for a vehicle' },
+              ...(vehicles.data ?? []).map((v) => ({
+                value: v.id,
+                label: v.registration_number,
+                sublabel: v.vehicle_type || undefined,
+              })),
+            ]}
+          />
+        </div>
         <FormField label="Description" className="sm:col-span-2">{(p) => <Textarea {...p} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />}</FormField>
         <FormField label="Vendor / paid to (name)">{(p) => <Input {...p} value={vendor} onChange={(e) => setVendor(e.target.value)} />}</FormField>
         <FormField label="Payment mode">{(p) => <Select {...p} value={mode} onChange={(e) => setMode(e.target.value as PaymentMode | '')}><option value="">—</option><option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option><option value="upi">UPI</option><option value="cheque">Cheque</option><option value="other">Other</option></Select>}</FormField>

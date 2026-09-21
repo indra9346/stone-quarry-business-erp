@@ -16,6 +16,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Dialog'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { formatDateTime, parseOptionalNumber } from '@/lib/format'
@@ -151,9 +152,26 @@ function StockItemDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
         save.mutate({ material_id: materialId, batch_code: batch.trim() || null, location: location.trim() || null, unit: unit || null }, { onError: (e) => setError(e.message) })
       }}>Create</Button></>}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Material" required className="sm:col-span-2" hint={materials.data?.length === 0 ? 'No materials yet — an administrator can add them.' : undefined}>
-          {(p) => <Select {...p} value={materialId} onChange={(e) => setMaterialId(e.target.value)}><option value="">Select material…</option>{materials.data?.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</Select>}
-        </FormField>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-stone-600">
+            Material <span className="text-red-600">*</span>
+            {materials.data?.length === 0 && (
+              <span className="ml-1 text-[11px] font-normal text-stone-400">
+                (No materials yet — an administrator can add them under Settings)
+              </span>
+            )}
+          </label>
+          <SearchableSelect
+            value={materialId}
+            onChange={setMaterialId}
+            placeholder="Search or select material…"
+            options={(materials.data ?? []).map((m) => ({
+              value: m.id,
+              label: m.name,
+              sublabel: m.hsn_code ? `HSN: ${m.hsn_code}` : m.category || undefined,
+            }))}
+          />
+        </div>
         <FormField label="Batch code">{(p) => <Input {...p} value={batch} onChange={(e) => setBatch(e.target.value)} />}</FormField>
         <FormField label="Location">{(p) => <Input {...p} value={location} onChange={(e) => setLocation(e.target.value)} />}</FormField>
         <FormField label="Unit" hint="As the business measures this item; none is assumed.">

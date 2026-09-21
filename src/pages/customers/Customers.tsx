@@ -18,7 +18,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Dialog'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
-import { BillStateBadge, BillTypeBadge, QuotationStatusBadge, StatusBadge } from '@/components/ui/StatusBadge'
+import { BillStateBadge, QuotationStatusBadge, StatusBadge } from '@/components/ui/StatusBadge'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import RecordPaymentDialog from '@/features/payments/RecordPaymentDialog'
 import { formatDate } from '@/lib/format'
@@ -213,7 +213,6 @@ export function CustomerDetail() {
               dense
               columns={[
                 { key: 'no', header: 'Bill', cell: (b) => <Link className="font-medium text-amber-800 hover:underline" to={`${base}/bills/${b.id}`}>{b.bill_number}</Link> },
-                { key: 'type', header: 'Type', cell: (b) => <BillTypeBadge type={b.bill_type} /> },
                 { key: 'date', header: 'Date', cell: (b) => formatDate(b.bill_date) },
                 { key: 'total', header: 'Total', numeric: true, cell: (b) => <CurrencyDisplay value={b.grand_total} /> },
                 { key: 'due', header: 'Due', numeric: true, cell: (b) => <CurrencyDisplay value={b.balance_due} /> },

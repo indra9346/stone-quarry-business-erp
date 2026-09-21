@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Modal } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useBizMutation, useBizQuery } from '@/hooks/useBiz'
 import { useCustomerPicker } from '@/hooks/useLookups'
 import { openBillsForCustomer, recordPayment } from '@/services/finance'
@@ -99,30 +100,52 @@ export default function RecordPaymentDialog({
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Customer" required className="sm:col-span-2">
-          {(p) => (
-            <Select {...p} value={customerId} disabled={!!presetCustomer || !!presetBill} onChange={(e) => { setCustomerId(e.target.value); setBillId(''); setAmount('') }}>
-              <option value="">Select customer…</option>
-              {customers.data?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.customer_name}
-                </option>
-              ))}
-            </Select>
-          )}
-        </FormField>
-        <FormField label="Against bill (optional)" hint="Only posted bills with a balance are listed. Leave blank for an on-account payment." className="sm:col-span-2">
-          {(p) => (
-            <Select {...p} value={billId} disabled={!customerId || !!presetBill} onChange={(e) => { setBillId(e.target.value); setAmount('') }}>
-              <option value="">On account (no bill)</option>
-              {bills.data?.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.bill_type === 'ev' ? 'EV' : 'Normal'} {b.bill_number} · {formatDate(b.bill_date)} · due {formatINR(b.balance_due)}
-                </option>
-              ))}
-            </Select>
-          )}
-        </FormField>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-stone-600">
+            Customer <span className="text-red-600">*</span>
+          </label>
+          <SearchableSelect
+            value={customerId}
+            disabled={!!presetCustomer || !!presetBill}
+            onChange={(val) => {
+              setCustomerId(val)
+              setBillId('')
+              setAmount('')
+            }}
+            placeholder="Search or select customer…"
+            options={(customers.data ?? []).map((c) => ({
+              value: c.id,
+              label: c.customer_name,
+              sublabel: c.gstin ? `GST: ${c.gstin}` : c.billing_address || undefined,
+            }))}
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-stone-600">
+            Against bill (optional)
+            <span className="ml-1 text-[11px] font-normal text-stone-400">
+              Only posted bills with a balance. Leave blank for on-account.
+            </span>
+          </label>
+          <SearchableSelect
+            value={billId}
+            disabled={!customerId || !!presetBill}
+            onChange={(val) => {
+              setBillId(val)
+              setAmount('')
+            }}
+            placeholder="On account (no bill)"
+            options={[
+              { value: '', label: 'On account (no specific bill)' },
+              ...(bills.data ?? []).map((b) => ({
+                value: b.id,
+                label: `Bill ${b.bill_number}`,
+                sublabel: `${formatDate(b.bill_date)} · Balance Due: ${formatINR(b.balance_due)}`,
+              })),
+            ]}
+          />
+        </div>
         <FormField label="Amount (₹)" required>
           {(p) => <Input {...p} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />}
         </FormField>

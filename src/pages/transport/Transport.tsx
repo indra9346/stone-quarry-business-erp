@@ -11,6 +11,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Dialog'
 import { FormField, Input, Select, Textarea } from '@/components/ui/form'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { StatusBadge, type Tone } from '@/components/ui/StatusBadge'
 import { formatDate, parseOptionalNumber, todayIST } from '@/lib/format'
 import type { Driver, TripStatus, Vehicle, VehicleStatus } from '@/types/db'
@@ -70,7 +71,22 @@ function VehicleDialog({ value, onClose, drivers }: { value: Vehicle | 'new' | n
         <FormField label="Status">{(p) => <Select {...p} value={f.status} onChange={(e) => s('status', e.target.value)}><option value="available">Available</option><option value="on_trip">On trip</option><option value="maintenance">Maintenance</option><option value="inactive">Inactive</option></Select>}</FormField>
         <FormField label="Type">{(p) => <Input {...p} value={f.type} onChange={(e) => s('type', e.target.value)} />}</FormField>
         <FormField label="Make / model">{(p) => <Input {...p} value={f.model} onChange={(e) => s('model', e.target.value)} />}</FormField>
-        <FormField label="Assigned driver">{(p) => <Select {...p} value={f.driver} onChange={(e) => s('driver', e.target.value)}><option value="">—</option>{drivers.map((d) => <option key={d.id} value={d.id}>{d.driver_name}</option>)}</Select>}</FormField>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-stone-600">Assigned driver</label>
+          <SearchableSelect
+            value={f.driver}
+            onChange={(val) => s('driver', val)}
+            placeholder="— Select driver —"
+            options={[
+              { value: '', label: '— No driver assigned —' },
+              ...drivers.map((d) => ({
+                value: d.id,
+                label: d.driver_name,
+                sublabel: d.phone ? `Phone: ${d.phone}` : undefined,
+              })),
+            ]}
+          />
+        </div>
         <FormField label="Capacity">{(p) => <Input {...p} value={f.capacity} onChange={(e) => s('capacity', e.target.value)} />}</FormField>
         <FormField label="Notes" className="sm:col-span-2">{(p) => <Textarea {...p} rows={2} value={f.notes} onChange={(e) => s('notes', e.target.value)} />}</FormField>
       </div>
@@ -162,11 +178,22 @@ export function TripsPage() {
               <option value="">All</option><option value="planned">Planned</option><option value="loaded">Loaded</option><option value="in_transit">In transit</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option>
             </Select>
           </label>
-          <label className="block text-xs font-medium text-stone-600">Vehicle
-            <Select className="mt-1 w-44" value={vehicleId} onChange={(e) => { setVehicleId(e.target.value); setPage(0) }}>
-              <option value="">All</option>{vehicles.data?.map((v) => <option key={v.id} value={v.id}>{v.registration_number}</option>)}
-            </Select>
-          </label>
+          <div className="w-48">
+            <span className="mb-1 block text-xs font-medium text-stone-600">Vehicle</span>
+            <SearchableSelect
+              value={vehicleId}
+              onChange={(val) => { setVehicleId(val); setPage(0) }}
+              placeholder="All vehicles"
+              options={[
+                { value: '', label: 'All vehicles' },
+                ...(vehicles.data ?? []).map((v) => ({
+                  value: v.id,
+                  label: v.registration_number,
+                  sublabel: v.vehicle_type || undefined,
+                })),
+              ]}
+            />
+          </div>
           <DateRangePicker from={range.from} to={range.to} onChange={(r) => { setRange(r); setPage(0) }} />
         </FilterBar>
         <DataTable columns={columns} rows={query.data?.rows} rowKey={(t) => t.id} loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()}
@@ -211,9 +238,53 @@ function TripDialog({ value, onClose, vehicles, drivers }: { value: TripRow | 'n
         save.mutate({ qty: q }, { onError: (e) => setError(e.message) })
       }}>Save trip</Button></>}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Vehicle" required>{(p) => <Select {...p} value={f.vehicle} onChange={(e) => s('vehicle', e.target.value)}><option value="">Select…</option>{vehicles.map((v) => <option key={v.id} value={v.id}>{v.registration_number}</option>)}</Select>}</FormField>
-        <FormField label="Driver">{(p) => <Select {...p} value={f.driver} onChange={(e) => s('driver', e.target.value)}><option value="">—</option>{drivers.map((d) => <option key={d.id} value={d.id}>{d.driver_name}</option>)}</Select>}</FormField>
-        <FormField label="Customer">{(p) => <Select {...p} value={f.customer} onChange={(e) => s('customer', e.target.value)}><option value="">—</option>{customers.data?.map((c) => <option key={c.id} value={c.id}>{c.customer_name}</option>)}</Select>}</FormField>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-stone-600">
+            Vehicle <span className="text-red-600">*</span>
+          </label>
+          <SearchableSelect
+            value={f.vehicle}
+            onChange={(val) => s('vehicle', val)}
+            placeholder="Select vehicle…"
+            options={vehicles.map((v) => ({
+              value: v.id,
+              label: v.registration_number,
+              sublabel: v.vehicle_type || undefined,
+            }))}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-stone-600">Driver</label>
+          <SearchableSelect
+            value={f.driver}
+            onChange={(val) => s('driver', val)}
+            placeholder="— Select driver —"
+            options={[
+              { value: '', label: '— None —' },
+              ...drivers.map((d) => ({
+                value: d.id,
+                label: d.driver_name,
+                sublabel: d.phone ? `Phone: ${d.phone}` : undefined,
+              })),
+            ]}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-stone-600">Customer</label>
+          <SearchableSelect
+            value={f.customer}
+            onChange={(val) => s('customer', val)}
+            placeholder="— Select customer —"
+            options={[
+              { value: '', label: '— None —' },
+              ...(customers.data ?? []).map((c) => ({
+                value: c.id,
+                label: c.customer_name,
+                sublabel: c.gstin ? `GST: ${c.gstin}` : c.billing_address || undefined,
+              })),
+            ]}
+          />
+        </div>
         <FormField label="Trip date" required>{(p) => <Input {...p} type="date" value={f.date} onChange={(e) => s('date', e.target.value)} />}</FormField>
         <FormField label="Pickup location">{(p) => <Input {...p} value={f.pickup} onChange={(e) => s('pickup', e.target.value)} />}</FormField>
         <FormField label="Destination">{(p) => <Input {...p} value={f.dest} onChange={(e) => s('dest', e.target.value)} />}</FormField>

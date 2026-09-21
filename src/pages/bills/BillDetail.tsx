@@ -8,7 +8,7 @@ import { cancelBill, deleteDraftBill, getBill, postBill } from '@/services/bills
 import { Card, CardHeader, CurrencyDisplay, PageHeader, PDFButton, PrintButton, QuantityDisplay } from '@/components/ui/layout'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/Dialog'
-import { BillStateBadge, BillTypeBadge, PaymentStatusBadge } from '@/components/ui/StatusBadge'
+import { BillStateBadge, PaymentStatusBadge } from '@/components/ui/StatusBadge'
 import { ErrorState, Skeleton } from '@/components/ui/feedback'
 import { BillDocument } from '@/components/documents/documents'
 import RecordPaymentDialog from '@/features/payments/RecordPaymentDialog'
@@ -129,7 +129,7 @@ export default function BillDetail() {
                     <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                       <th className="px-5 py-2.5">Particulars</th>
                       <th className="px-3 py-2.5">HSN</th>
-                      <th className="px-3 py-2.5 text-right">Qty</th>
+                      <th className="px-3 py-2.5 text-right">Pieces</th>
                       <th className="px-3 py-2.5 text-right">Rate</th>
                       <th className="px-5 py-2.5 text-right">Amount</th>
                     </tr>
@@ -192,7 +192,6 @@ export default function BillDetail() {
                 <div className="flex items-center justify-between">
                   <dt className="text-stone-500">Status</dt>
                   <dd className="flex items-center gap-2">
-                    <BillTypeBadge type={bill.bill_type} />
                     <BillStateBadge bill={bill} />
                   </dd>
                 </div>
