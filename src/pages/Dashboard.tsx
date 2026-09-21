@@ -30,29 +30,29 @@ export default function Dashboard() {
 
   return (
     <div>
-      <section className="relative mb-6 animate-rise overflow-hidden rounded-xl shadow-md ring-1 ring-stone-200">
-        <Backdrop compact image="/media/quarry-gateway.webp" position="50% 62%" video="quarry-dashboard" />
+      <section className="relative mb-6 overflow-hidden rounded-2xl border-2 border-[#e3d5be] bg-[#fbf9f4] shadow-[0_8px_24px_-6px_rgba(184,134,11,0.08)]">
+        <Backdrop compact image="/media/quarry-gateway.webp" position="50% 62%" />
         <div className="relative flex flex-wrap items-end justify-between gap-4 px-6 py-7 sm:py-9">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">{formatDate(today)}</p>
-              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 backdrop-blur-xs">
-                Live Unit Ops
+              <p className="text-xs font-bold uppercase tracking-wider text-[#a87a15]">{formatDate(today)}</p>
+              <span className="rounded-full bg-[#ecfdf5] px-2.5 py-0.5 text-[10px] font-bold text-[#065f46] ring-1 ring-[#10b981]/30">
+                Operational Unit
               </span>
             </div>
-            <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">{profile.name}</h1>
-            <p className="mt-1 text-sm font-medium text-stone-200">Quarry extraction, sawing & commercial overview</p>
+            <h1 className="mt-1.5 text-2xl font-extrabold text-[#241e17] sm:text-3xl">{profile.name}</h1>
+            <p className="mt-1 text-sm font-medium text-[#6e6153]">Quarry extraction, sawing & commercial overview</p>
           </div>
           <div className="flex flex-wrap gap-2.5">
             <Link
               to={`${base}/bills/new?type=ev`}
-              className="rounded-lg bg-gradient-to-r from-amber-500 to-amber-400 px-4 py-2 text-sm font-bold text-slate-900 shadow-sm transition-all hover:brightness-105 active:scale-[0.98]"
+              className="rounded-xl bg-gradient-to-r from-[#d4af37] via-[#c59b27] to-[#b8860b] px-4 py-2 text-sm font-bold text-white shadow-sm transition-all hover:brightness-105 active:scale-[0.98]"
             >
               + New EV Bill
             </Link>
             <Link
               to={`${base}/bills/new?type=normal`}
-              className="rounded-lg bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-xs ring-1 ring-white/30 transition-all hover:bg-white/30 active:scale-[0.98]"
+              className="rounded-xl border border-[#d4af37]/40 bg-[#fbf8f0] px-4 py-2 text-sm font-bold text-[#7d5604] shadow-xs transition-all hover:bg-[#fae5a3]/40 active:scale-[0.98]"
             >
               + New Normal Bill
             </Link>
@@ -104,12 +104,12 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
-        <section className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm xl:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-stone-50/50 px-5 py-4">
+        <section className="overflow-hidden rounded-2xl border border-[#e5dac8] bg-[#fdfcf9] shadow-sm xl:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0e8dc] bg-[#fbf9f4] px-5 py-4">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Sales activity</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Active bills per day · total <span className="tabular font-bold text-amber-700">{formatINR(chartTotal)}</span>
+              <h2 className="text-sm font-bold text-[#241e17]">Sales activity</h2>
+              <p className="mt-0.5 text-xs text-[#786c5e]">
+                Active bills per day · total <span className="tabular font-bold text-[#996515]">{formatINR(chartTotal)}</span>
               </p>
             </div>
             <div>
@@ -118,18 +118,18 @@ export default function Dashboard() {
           </div>
           <div className="h-72 px-2 py-4">
             {sales.isLoading ? (
-              <Skeleton className="mx-3 h-full !bg-stone-100" />
+              <Skeleton className="mx-3 h-full !bg-[#f5efe6]" />
             ) : sales.error ? (
               <ErrorState error={sales.error} onRetry={() => void sales.refetch()} />
             ) : !sales.data || sales.data.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-sm text-stone-400">No bills in this period.</div>
+              <div className="flex h-full items-center justify-center text-sm text-[#8c7e6e]">No bills in this period.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={sales.data.map((d) => ({ ...d, label: formatDate(d.date).slice(0, 5) }))}>
-                  <CartesianGrid stroke="rgba(203, 213, 225, 0.45)" vertical={false} />
-                  <XAxis dataKey="label" stroke="#64748b" tickLine={false} axisLine={false} fontSize={11} />
+                  <CartesianGrid stroke="rgba(229, 218, 200, 0.6)" vertical={false} />
+                  <XAxis dataKey="label" stroke="#8c7e6e" tickLine={false} axisLine={false} fontSize={11} />
                   <YAxis
-                    stroke="#64748b"
+                    stroke="#8c7e6e"
                     tickLine={false}
                     axisLine={false}
                     fontSize={11}
@@ -139,19 +139,19 @@ export default function Dashboard() {
                     }
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(245, 158, 11, 0.08)' }}
+                    cursor={{ fill: 'rgba(212, 175, 55, 0.1)' }}
                     contentStyle={{
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 8,
-                      color: '#0f172a',
-                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                      background: '#fdfcf9',
+                      border: '1px solid #e0d4c1',
+                      borderRadius: 10,
+                      color: '#241e17',
+                      boxShadow: '0 8px 24px -4px rgba(184,134,11,0.12)',
                       fontSize: 12,
                     }}
                     formatter={(v: number) => [formatINR(v), 'Sales']}
                     labelFormatter={(_l, p) => formatDate(p[0]?.payload?.date as string | undefined)}
                   />
-                  <Bar dataKey="total" fill="#e8a227" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" fill="#d4af37" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
