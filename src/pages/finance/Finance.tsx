@@ -110,12 +110,14 @@ export function LedgerPage() {
     {
       key: 'ref',
       header: 'Reference',
-      cell: (e) =>
-        e.reference_type === 'bill' && e.reference_id ? (
-          <Link className="text-amber-800 hover:underline" to={`/business/${code}/bills/${e.reference_id}`}>{e.description ?? 'Bill'}</Link>
+      cell: (e) => {
+        const cleanDesc = (e.description ?? 'Bill').replace(/^Bill\s+(?:normal|ev)\s+/i, 'Bill ')
+        return e.reference_type === 'bill' && e.reference_id ? (
+          <Link className="text-amber-800 hover:underline" to={`/business/${code}/bills/${e.reference_id}`}>{cleanDesc}</Link>
         ) : (
-          e.description ?? '—'
-        ),
+          cleanDesc
+        )
+      },
     },
     { key: 'debit', header: 'Debit', numeric: true, cell: (e) => (e.debit > 0 ? <CurrencyDisplay value={e.debit} /> : <span className="text-stone-300">—</span>) },
     { key: 'credit', header: 'Credit', numeric: true, cell: (e) => (e.credit > 0 ? <CurrencyDisplay value={e.credit} className="text-emerald-700" /> : <span className="text-stone-300">—</span>) },

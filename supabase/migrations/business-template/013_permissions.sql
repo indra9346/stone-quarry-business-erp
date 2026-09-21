@@ -184,7 +184,7 @@ begin
 
   v_balance := append_ledger_entry(
     v_bill.customer_id, 'bill', 'bill', v_bill.id,
-    'Bill ' || upper(v_bill.bill_type) || ' ' || v_bill.bill_number,
+    'Bill ' || v_bill.bill_number,
     v_bill.grand_total, 0, v_bill.bill_date
   );
   update bills set ledger_posted_at = now() where id = v_bill.id;
