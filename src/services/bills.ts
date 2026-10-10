@@ -54,6 +54,10 @@ export interface BillItemInput {
   quantity: number | null
   unit: string | null
   rate: number | null
+  /** Stone dimensions. All three present together, or all three NULL (legacy / non-dimensioned line). */
+  feet: number | null
+  width_in: number | null
+  thickness_in: number | null
 }
 
 export interface BillInput {
@@ -77,9 +81,29 @@ export interface BillInput {
   items: BillItemInput[]
 }
 
-/** A line is descriptive (all three NULL) or fully priced; amount = round(qty × rate, 2). */
-export function lineAmount(i: Pick<BillItemInput, 'quantity' | 'rate'>): number | null {
-  return i.quantity !== null && i.rate !== null ? round2(i.quantity * i.rate) : null
+/**
+ * The ONE place the stone pricing formula lives — called by both bills and
+ * quotations (`documents.ts` imports this), so the two documents can never
+ * drift apart.
+ *
+ * Client-confirmed formula (2026-10-10): amount = feet x width_in x
+ * thickness_in x rate x pieces. `pieces` (quantity) is an OPTIONAL
+ * multiplier — a dimensioned line with no piece count prices as one piece,
+ * matching the client's own example (16 x 15 x 3 x Rs260 = Rs1,87,200, no
+ * piece count given). A line with no dimensions falls back to the original
+ * pieces x rate formula, so historical documents keep their saved amount.
+ * Half-filled dimensions (1 or 2 of the 3 typed) return null rather than
+ * guess — the caller should show no amount, not a wrong one.
+ */
+export function lineAmount(i: Pick<BillItemInput, 'quantity' | 'rate' | 'feet' | 'width_in' | 'thickness_in'>): number | null {
+  if (i.rate === null) return null
+  if (i.feet !== null && i.width_in !== null && i.thickness_in !== null) {
+    return round2(i.feet * i.width_in * i.thickness_in * i.rate * (i.quantity ?? 1))
+  }
+  if (i.feet === null && i.width_in === null && i.thickness_in === null && i.quantity !== null) {
+    return round2(i.quantity * i.rate)
+  }
+  return null
 }
 
 function headerPayload(input: BillInput) {
@@ -96,6 +120,9 @@ function itemRows(billId: string, items: BillItemInput[]) {
     quantity: it.quantity,
     unit: it.unit,
     rate: it.rate,
+    feet: it.feet,
+    width_in: it.width_in,
+    thickness_in: it.thickness_in,
     amount: lineAmount(it),
     sort_order: idx,
   }))
