@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { formatDate, formatINR, formatPercent, formatQuantity, formatTime } from '@/lib/format'
 import { useBusinessLetterhead } from '@/hooks/useLookups'
+import { COMPANY_LOGO_SRC } from '@/lib/branding'
 import type { Bill, BillItem, MeasurementRow, MeasurementSheet, Quotation, QuotationItem } from '@/types/db'
 import { billState } from '@/types/db'
 
@@ -13,14 +14,6 @@ export function DocumentPage({ children, className }: { children: ReactNode; cla
     </div>
   )
 }
-
-/**
- * The one approved company logo, used on every printed document for every
- * business (KMG and Murudeshwara both use this same asset, by instruction —
- * this is intentionally NOT per-business). Changing the logo for everyone
- * means replacing this one file.
- */
-const COMPANY_LOGO_SRC = '/branding/kmg-temple-stones-logo.jpg'
 
 /** Business letterhead — name/address/contact come from the business's own settings; the logo is shared. */
 export function DocumentHeader({ title, number, date, time }: { title: string; number?: string | null; date?: string | null; time?: string | null }) {
