@@ -4,6 +4,7 @@ import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { useBusinessContext } from './businessContextValue'
 import Backdrop from '@/components/Backdrop'
 import { useDarkPage } from '@/hooks/useDarkPage'
+import { COMPANY_LOGO_SRC } from '@/lib/branding'
 
 /** Frame shared by every pre-login screen of a business portal in Cream & Gold aesthetic. */
 export default function AuthShell({
@@ -46,14 +47,11 @@ export default function AuthShell({
               <p className="text-lg font-bold leading-tight text-[#241e17]">{profile.name}</p>
               <p className="text-xs font-medium text-[#786c5e]">{profile.legalName}</p>
             </div>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#d4af37] via-[#c59b27] to-[#a87a15] text-sm font-bold text-white shadow-sm ring-2 ring-white">
-              {profile.name
-                .split(' ')
-                .map((w) => w[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase()}
-            </div>
+            <img
+              src={COMPANY_LOGO_SRC}
+              alt="Company logo"
+              className="h-10 w-10 shrink-0 rounded-xl object-contain shadow-sm ring-2 ring-white"
+            />
           </div>
 
           <div className="flex items-center gap-1.5 text-xs font-bold text-[#996515]">

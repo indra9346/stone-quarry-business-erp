@@ -5,6 +5,7 @@ import Backdrop from '@/components/Backdrop'
 import { cn } from '@/lib/utils'
 import { useDarkPage } from '@/hooks/useDarkPage'
 import { ArrowRight } from 'lucide-react'
+import { COMPANY_LOGO_SRC } from '@/lib/branding'
 
 /**
  * Central gateway.
@@ -23,11 +24,11 @@ export default function MainBranchHome() {
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src="/favicon-192.png"
-              alt=""
+              src={COMPANY_LOGO_SRC}
+              alt="Company logo"
               width={38}
               height={38}
-              className="h-9.5 w-9.5 rounded-lg bg-[#fae5a3]/40 p-1 ring-1 ring-[#d4af37]/40"
+              className="h-9.5 w-9.5 rounded-lg object-contain bg-[#fae5a3]/40 p-1 ring-1 ring-[#d4af37]/40"
             />
             <span className="text-lg font-bold tracking-tight text-[#2d261e]">
               StoneQuarry<span className="text-[#b8860b]">ERP</span>
@@ -63,14 +64,11 @@ export default function MainBranchHome() {
                     <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#e5c875] via-[#d4af37] to-[#b8860b]" />
 
                     <div className="flex items-start justify-between gap-3">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#d4af37] via-[#c59b27] to-[#a87a15] text-base font-bold tracking-wide text-white shadow-md ring-2 ring-white">
-                        {b.name
-                          .split(' ')
-                          .map((w) => w[0])
-                          .join('')
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </span>
+                      <img
+                        src={COMPANY_LOGO_SRC}
+                        alt="Company logo"
+                        className="h-12 w-12 rounded-xl object-contain shadow-md ring-2 ring-white"
+                      />
 
                       <span
                         className={cn(

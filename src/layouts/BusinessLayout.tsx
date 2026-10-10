@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { navFor, NAV_GROUPS } from '@/config/navigation'
 import { useBusinessContext } from '@/features/auth/businessContextValue'
 import { useAlerts } from '@/hooks/useAlerts'
+import { COMPANY_LOGO_SRC } from '@/lib/branding'
 
 function initials(name: string) {
   return name
@@ -46,9 +47,11 @@ export default function BusinessLayout() {
   const sidebar = (
     <div className="flex h-full flex-col bg-[#f7f3eb] text-[#3d342a] border-r border-[#e5dac8] shadow-sm">
       <div className="flex items-center gap-3 border-b border-[#e5dac8] bg-[#fbf9f4] px-4 py-4.5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#d4af37] via-[#c59b27] to-[#a87a15] text-xs font-extrabold tracking-wide text-white shadow-sm ring-1 ring-[#d4af37]/40">
-          {initials(profile.name)}
-        </div>
+        <img
+          src={COMPANY_LOGO_SRC}
+          alt="Company logo"
+          className="h-10 w-10 shrink-0 rounded-xl object-contain shadow-sm ring-1 ring-[#d4af37]/40"
+        />
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-[#241e17]">{profile.name}</p>
           <p className="flex items-center gap-1.5 text-[11px] font-semibold text-[#059669]">
