@@ -80,6 +80,9 @@ function qItems(id: string, items: BillItemInput[]) {
     quantity: it.quantity,
     unit: it.unit,
     rate: it.rate,
+    feet: it.feet,
+    width_in: it.width_in,
+    thickness_in: it.thickness_in,
     amount: lineAmount(it),
     sort_order: idx,
   }))

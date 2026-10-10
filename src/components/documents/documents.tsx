@@ -14,18 +14,33 @@ export function DocumentPage({ children, className }: { children: ReactNode; cla
   )
 }
 
-/** Business letterhead — every value comes from the business's own settings. */
+/**
+ * The one approved company logo, used on every printed document for every
+ * business (KMG and Murudeshwara both use this same asset, by instruction —
+ * this is intentionally NOT per-business). Changing the logo for everyone
+ * means replacing this one file.
+ */
+const COMPANY_LOGO_SRC = '/branding/kmg-temple-stones-logo.jpg'
+
+/** Business letterhead — name/address/contact come from the business's own settings; the logo is shared. */
 export function DocumentHeader({ title, number, date, time }: { title: string; number?: string | null; date?: string | null; time?: string | null }) {
   const lh = useBusinessLetterhead()
   return (
     <header className="border-b-2 border-stone-900 pb-3">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xl font-bold tracking-wide">{lh.name}</p>
-          {lh.address && <p className="mt-0.5 max-w-md text-xs text-stone-600">{lh.address}</p>}
-          <p className="mt-0.5 text-xs text-stone-600">
-            {[lh.phone && `Phone: ${lh.phone}`, lh.email, lh.gstin && `GSTIN: ${lh.gstin}`].filter(Boolean).join('  ·  ')}
-          </p>
+        <div className="flex items-start gap-3">
+          <img
+            src={COMPANY_LOGO_SRC}
+            alt="Company logo"
+            className="h-16 w-16 shrink-0 object-contain"
+          />
+          <div>
+            <p className="text-xl font-bold tracking-wide">{lh.name}</p>
+            {lh.address && <p className="mt-0.5 max-w-md text-xs text-stone-600">{lh.address}</p>}
+            <p className="mt-0.5 text-xs text-stone-600">
+              {[lh.phone && `Phone: ${lh.phone}`, lh.email, lh.gstin && `GSTIN: ${lh.gstin}`].filter(Boolean).join('  ·  ')}
+            </p>
+          </div>
         </div>
         <div className="text-right">
           <p className="text-sm font-bold uppercase tracking-widest">{title}</p>

@@ -197,14 +197,62 @@ const cutting = await one(db, `select * from bill_items where bill_id=$1 and des
 check('"Temple cutting" line: quantity, unit, rate, amount, hsn are all NULL (not 0)',
   cutting.quantity === null && cutting.unit === null && cutting.rate === null && cutting.amount === null && cutting.hsn_code === null, JSON.stringify(cutting))
 await fails(db, 'a line whose amount != quantity x rate is rejected', `insert into bill_items (bill_id, description, quantity, rate, amount) values ($1,'x',390,60,23000)`, /bill_item_amount_consistent/, [billId])
+
+console.log('\n== Dimension-based stone pricing (014) ==')
+const dimLine = await one(db, `
+  insert into bill_items (bill_id, description, feet, width_in, thickness_in, rate, amount, sort_order)
+  values ($1, '16 x 15 x 3 dimensioned stone', 16, 15, 3, 260, 187200, 9) returning *`, [billId])
+eq('ACCEPTANCE TEST: 16 x 15 x 3 x Rs260, no piece count = Rs1,87,200', dimLine.amount, '187200.00')
+await db.query(`delete from bill_items where id=$1`, [dimLine.id])
+const dimLineWithPieces = await one(db, `
+  insert into bill_items (bill_id, description, feet, width_in, thickness_in, quantity, rate, amount, sort_order)
+  values ($1, '5 x 6 x 4, 24 pieces', 5, 6, 4, 24, 244, 702720, 9) returning *`, [billId])
+eq('pieces multiplies the per-piece dimension price (5x6x4x244x24)', dimLineWithPieces.amount, '702720.00')
+await db.query(`delete from bill_items where id=$1`, [dimLineWithPieces.id])
+await fails(db, 'dimensioned amount must match feet x width x thickness x rate x pieces',
+  `insert into bill_items (bill_id, description, feet, width_in, thickness_in, rate, amount) values ($1,'x',16,15,3,260,999)`,
+  /bill_item_amount_consistent/, [billId])
+// Both the dimensions-together AND the amount-consistent constraints are
+// violated at once by a half-filled dimension set (neither constraint's
+// branches match) — Postgres reports whichever it reaches first.
+await fails(db, 'half-filled dimensions (feet only) are rejected',
+  `insert into bill_items (bill_id, description, feet, rate, amount) values ($1,'x',16,260,4160)`,
+  /bill_item_dimensions_together|bill_item_amount_consistent/, [billId])
+await fails(db, 'half-filled dimensions (feet + width, no thickness) are rejected',
+  `insert into bill_items (bill_id, description, feet, width_in, rate, amount) values ($1,'x',16,15,260,62400)`,
+  /bill_item_dimensions_together|bill_item_amount_consistent/, [billId])
+await fails(db, 'dimensions given with no rate are rejected (not silently priced at 0)',
+  `insert into bill_items (bill_id, description, feet, width_in, thickness_in) values ($1,'x',16,15,3)`,
+  /bill_item_financials_together/, [billId])
+await fails(db, 'negative feet is rejected',
+  `insert into bill_items (bill_id, description, feet, width_in, thickness_in, rate, amount) values ($1,'x',-1,15,3,260,-11700)`,
+  /feet_check|violates check/, [billId])
+const legacyLine = await one(db, `
+  insert into bill_items (bill_id, description, quantity, rate, amount) values ($1,'legacy no-dimension line',24,244,5856) returning *`, [billId])
+eq('legacy line (no dimensions) keeps the original pieces x rate formula', legacyLine.amount, '5856.00')
+await db.query(`delete from bill_items where id=$1`, [legacyLine.id])
+eq('bill subtotal is unaffected by the dimension probes above (all cleaned up)', (await one(db, 'select subtotal from bills where id=$1', [billId])).subtotal, '23400.00')
+const dimQt = (await one(db, `insert into quotations (quotation_number, customer_id) values ('Q-DIM-1',$1) returning id`, [customerId])).id
+const dimQtItem = await one(db, `
+  insert into quotation_items (quotation_id, description, feet, width_in, thickness_in, rate, amount)
+  values ($1, '16 x 15 x 3', 16, 15, 3, 260, 187200) returning *`, [dimQt])
+eq('quotation_items uses the SAME formula as bill_items', dimQtItem.amount, '187200.00')
+await fails(db, 'quotation_items enforces the same dimension-consistency rule',
+  `insert into quotation_items (quotation_id, description, feet, width_in, thickness_in, rate, amount) values ($1,'x',16,15,3,260,1)`,
+  /quotation_item_amount_consistent/, [dimQt])
+
 await fails(db, 'client cannot supply grand_total on insert', `insert into bills (bill_type,bill_number,bill_number_source,customer_id,grand_total) values ('normal','G1','manual',$1,1)`, /permission denied/, [customerId])
 await fails(db, 'client cannot update grand_total', `update bills set grand_total = 1 where id=$1`, /permission denied/, [billId])
 await fails(db, 'client cannot update amount_received', `update bills set amount_received = 5 where id=$1`, /permission denied/, [billId])
 await fails(db, 'client cannot update payment_status', `update bills set payment_status = 'paid' where id=$1`, /permission denied/, [billId])
 await fails(db, 'client cannot mark a bill posted', `update bills set ledger_posted_at = now() where id=$1`, /permission denied/, [billId])
 await fails(db, 'a half-filled line (quantity only) is rejected', `insert into bill_items (bill_id, description, quantity) values ($1,'x',5)`, /bill_item_financials_together/, [billId])
-await fails(db, 'a half-filled line (rate + amount, no quantity) is rejected', `insert into bill_items (bill_id, description, rate, amount) values ($1,'x',10,10)`, /bill_item_financials_together/, [billId])
-await fails(db, 'a half-filled line (amount only) is rejected', `insert into bill_items (bill_id, description, amount) values ($1,'x',10)`, /bill_item_financials_together/, [billId])
+// Since migration 014, a rate with no pieces and no dimensions violates BOTH
+// bill_item_financials_together AND bill_item_amount_consistent at once (no
+// branch of either constraint matches); which one Postgres reports first is
+// unspecified, so accept either name — the insert must fail either way.
+await fails(db, 'a half-filled line (rate + amount, no quantity) is rejected', `insert into bill_items (bill_id, description, rate, amount) values ($1,'x',10,10)`, /bill_item_financials_together|bill_item_amount_consistent/, [billId])
+await fails(db, 'a half-filled line (amount only) is rejected', `insert into bill_items (bill_id, description, amount) values ($1,'x',10)`, /bill_item_financials_together|bill_item_amount_consistent/, [billId])
 const qt = (await one(db, `insert into quotations (quotation_number, customer_id) values ('Q-TEST-1',$1) returning id`, [customerId])).id
 await fails(db, 'quotation lines follow the same all-or-none rule', `insert into quotation_items (quotation_id, description, quantity) values ($1,'x',5)`, /quotation_item_financials_together/, [qt])
 await db.query(`insert into quotation_items (quotation_id, description) values ($1,'descriptive quotation line')`, [qt])

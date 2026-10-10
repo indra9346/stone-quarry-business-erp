@@ -222,8 +222,8 @@ async function adminPhase(c: SupabaseClient, me: Me, shared: Shared) {
 
   // ---- quotation (manual TEST number so no generated number is consumed)
   const qItems = [
-    { description: 'TEST priced line', hsn_code: null, quantity: 2, unit: null, rate: 50 },
-    { description: 'TEST descriptive line', hsn_code: null, quantity: null, unit: null, rate: null },
+    { description: 'TEST priced line', hsn_code: null, quantity: 2, unit: null, rate: 50, feet: null, width_in: null, thickness_in: null },
+    { description: 'TEST descriptive line', hsn_code: null, quantity: null, unit: null, rate: null, feet: null, width_in: null, thickness_in: null },
   ]
   const quotation = await step('create TEST quotation (priced + descriptive line)', () =>
     createQuotation(c, {
@@ -248,8 +248,8 @@ async function adminPhase(c: SupabaseClient, me: Me, shared: Shared) {
     party_name: null, party_address: null, party_gstin: null, eway_bill_number: null, vehicle_number: null, vehicle_id: null,
     cgst_percent: 2.5, sgst_percent: 2.5, igst_percent: null, discount_amount: null, other_charges: null, notes: 'smoke test',
     items: [
-      { description: 'TEST priced line', hsn_code: null, quantity: 3, unit: null, rate: 100 },
-      { description: 'TEST descriptive line', hsn_code: null, quantity: null, unit: null, rate: null },
+      { description: 'TEST priced line', hsn_code: null, quantity: 3, unit: null, rate: 100, feet: null, width_in: null, thickness_in: null },
+      { description: 'TEST descriptive line', hsn_code: null, quantity: null, unit: null, rate: null, feet: null, width_in: null, thickness_in: null },
     ],
   })
   const numA = `TEST-A-${stamp}`
@@ -457,7 +457,7 @@ async function staffPhase(c: SupabaseClient, me: Me, shared: Shared) {
       await updateBill(c, shared.billPosted!, {
         bill_type: d.bill.bill_type, bill_number: d.bill.bill_number, bill_number_source: d.bill.bill_number_source, customer_id: d.bill.customer_id, bill_date: d.bill.bill_date,
         party_name: null, party_address: null, party_gstin: null, eway_bill_number: null, vehicle_number: null, vehicle_id: null, cgst_percent: 2.5, sgst_percent: 2.5,
-        igst_percent: null, discount_amount: 1, other_charges: null, notes: null, items: [{ description: 'x', hsn_code: null, quantity: 1, unit: null, rate: 1 }],
+        igst_percent: null, discount_amount: 1, other_charges: null, notes: null, items: [{ description: 'x', hsn_code: null, quantity: 1, unit: null, rate: 1, feet: null, width_in: null, thickness_in: null }],
       })
     }, /posted|read-only/i)
   } else skipped('staff vs posted bill', 'no TEST posted bill (run the ADMIN write phase first in the same run)')

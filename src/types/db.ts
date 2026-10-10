@@ -113,6 +113,10 @@ export interface BillItem {
   unit: string | null
   rate: number | null
   amount: number | null
+  /** Stone dimensions (feet x width_in x thickness_in), when priced by dimension. */
+  feet: number | null
+  width_in: number | null
+  thickness_in: number | null
   stock_item_id: string | null
   sort_order: number
 }
@@ -147,6 +151,10 @@ export interface QuotationItem {
   unit: string | null
   rate: number | null
   amount: number | null
+  /** Stone dimensions (feet x width_in x thickness_in), when priced by dimension. */
+  feet: number | null
+  width_in: number | null
+  thickness_in: number | null
   sort_order: number
 }
 

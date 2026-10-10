@@ -3,7 +3,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/form'
 import { formatINR } from '@/lib/format'
-import { draftAmount, newLine, type LineDraft } from './lines'
+import { draftAmount, draftBreakdown, newLine, type LineDraft } from './lines'
 import type { Unit } from '@/types/db'
 
 /**
@@ -154,9 +154,12 @@ export default function LineItemsEditor({
                 {/* 7. Equals '=' Symbol */}
                 <span className="select-none text-center text-base font-bold text-stone-400">=</span>
 
-                {/* 8. Amount */}
-                <div className="tabular text-right text-sm font-semibold text-stone-800 pr-1">
-                  {formatINR(draftAmount(l))}
+                {/* 8. Amount, with a small calculation breakdown for dimensioned lines */}
+                <div className="text-right pr-1">
+                  <div className="tabular text-sm font-semibold text-stone-800">{formatINR(draftAmount(l))}</div>
+                  {draftBreakdown(l) && (
+                    <div className="tabular text-[10px] leading-tight text-stone-400">{draftBreakdown(l)}</div>
+                  )}
                 </div>
 
                 {/* 9. Delete action */}
